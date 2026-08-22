@@ -1,5 +1,7 @@
 # `@udid-tools/core`
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14211/badge)](https://www.bestpractices.dev/projects/14211)
+
 Security-first TypeScript primitives for Apple Profile Service profiles: generate XML, optionally produce attached CMS/PKCS#7 SignedData, verify device responses, and parse every returned plist field without losing unknown data.
 
 > **Beta:** `0.1.0-beta.1` is ready for evaluation. Its public API follows semantic versioning, but beta releases may still contain breaking changes. MDM is intentionally out of scope.
