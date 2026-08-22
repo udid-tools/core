@@ -94,9 +94,6 @@ jobs:
           node-version: 22.14.0
           package-manager-cache: false
 
-      - name: Use the pinned npm CLI
-        run: npm install --global --ignore-scripts npm@11.17.0
-
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
 

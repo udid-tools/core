@@ -50,7 +50,7 @@
   "engines": {
     "node": ">=22.14.0"
   },
-  "packageManager": "npm@11.17.0",
+  "packageManager": "npm@11.19.0",
   "publishConfig": {
     "access": "public",
     "provenance": true
