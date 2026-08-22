@@ -12,6 +12,7 @@
     "description": "TypeDoc reference for every public export in @udid-tools/core."
   },
   "excludeInternal": true,
+  "disableSources": true,
   "githubPages": false,
   "hidePageHeader": true,
   "hideBreadcrumbs": true
