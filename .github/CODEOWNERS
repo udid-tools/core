@@ -1,0 +1,14 @@
+# Default ownership
+* @Baskerville42
+
+# Security- and release-sensitive surfaces
+/.github/workflows/ @Baskerville42
+/.github/dependabot.yml @Baskerville42
+/SECURITY.md @Baskerville42
+/THREAT_MODEL.md @Baskerville42
+/package.json @Baskerville42
+/package-lock.json @Baskerville42
+/src/cms/ @Baskerville42
+/src/certificates/ @Baskerville42
+/src/plist/ @Baskerville42
+/src/validation/ @Baskerville42

@@ -1,0 +1,77 @@
+---
+title: UDID Tools Core
+description: Generate, sign, verify, and parse Apple Profile Service profiles with a safe TypeScript API.
+template: splash
+hero:
+  tagline: A security-first TypeScript SDK for Apple Profile Service profiles and device responses.
+  actions:
+    - text: Get started
+      link: /core/getting-started/installation/
+      icon: right-arrow
+      variant: primary
+    - text: Try it online
+      link: https://udid.tools/?utm_source=core_docs&utm_medium=referral&utm_campaign=try_it_online
+      icon: external
+      variant: secondary
+    - text: View on GitHub
+      link: https://github.com/udid-tools/core
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+`@udid-tools/core` turns the Apple Profile Service flow into a small, explicit API. It generates valid mobile configuration profiles, optionally signs them with developer-provided PKCS#12 material, and safely parses CMS-signed device responses.
+
+<CardGrid>
+  <Card title="Explicit by design" icon="seti:config">
+    No environment reads, network downloads, hidden certificate authorities, logging, or global
+    state.
+  </Card>
+  <Card title="Safe failures" icon="warning">
+    Expected failures return typed `Result` values. Throwing variants are always named `OrThrow`.
+  </Card>
+  <Card title="Future-compatible" icon="puzzle">
+    Known Apple fields are typed while unknown response data is preserved losslessly.
+  </Card>
+  <Card title="Framework-agnostic" icon="rocket">
+    Use the same package from Next.js, Express, Node HTTP, serverless functions, or your own
+    backend.
+  </Card>
+</CardGrid>
+
+## The complete beta flow
+
+```ts
+import { generateProfile, parseProfileServiceResponse } from "@udid-tools/core";
+
+const generated = await generateProfile({
+  profile: {
+    kind: "profile-service",
+    identifier: "com.example.profile-service",
+    displayName: "Device Identification",
+    service: {
+      responseUrl: "https://example.com/profile-response",
+      deviceAttributes: ["UDID", "SERIAL", "PRODUCT", "VERSION"],
+    },
+  },
+});
+
+if (!generated.ok) {
+  console.error(generated.error.code);
+}
+```
+
+Signing is selected by providing a complete nested `signing` object. Parsing verifies CMS integrity by default, can validate against caller-provided trust anchors, correlates one-time challenges, and preserves unknown future response fields in `raw`.
+
+## Where to go next
+
+- Follow [Generate an unsigned profile](/core/guides/generate-unsigned/) for the smallest integration.
+- Add developer-provided PKCS#12 material in [Sign a profile](/core/guides/sign-profile/).
+- Build a safe response endpoint with [Parse a device response](/core/guides/parse-response/).
+- Review the exact beta boundary in the [capability matrix](/core/reference/capability-matrix/).
+- Read the [security model](/core/concepts/security-model/) before exposing an endpoint to the internet.
+
+:::caution[Beta software]
+Version `0.1.0-beta.1` supports PKCS#12 RSA identities with SHA-256. Review the capability matrix before using the package in production.
+:::

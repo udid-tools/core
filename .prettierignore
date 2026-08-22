@@ -1,0 +1,6 @@
+coverage/
+dist/
+docs/dist/
+docs/.astro/
+docs/src/content/docs/reference/api/
+package-lock.json

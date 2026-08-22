@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+.astro/
+docs/dist/
+docs/docs/
+.vite-temp/
+.idea/
+*.log
+*.tgz
+.env
+.env.*
+!.env.example
+.DS_Store

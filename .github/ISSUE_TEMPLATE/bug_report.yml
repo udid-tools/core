@@ -1,0 +1,89 @@
+name: Bug report
+description: Report reproducible incorrect behavior in @udid-tools/core.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. Search existing issues first and reduce the problem to synthetic data.
+
+        **Do not attach or paste production private keys, PKCS#12/PFX identities, passphrases, tokens, challenges, or unredacted device responses.** Report suspected vulnerabilities through [private vulnerability reporting](https://github.com/udid-tools/core/security/advisories/new), not this form.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight checks
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true
+        - label: My reproduction contains only synthetic, non-production cryptographic material and redacted device data.
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: 0.1.0-beta.1
+    validations:
+      required: true
+
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime and tooling
+      description: Include Node.js, TypeScript, package manager, and operating-system versions.
+      placeholder: Node.js 22.14.0, TypeScript 6.0.3, npm 11.17.0, Ubuntu 24.04
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Profile generation
+        - PKCS#12 or certificate handling
+        - CMS signing
+        - Response parsing
+        - Signature or trust verification
+        - Plist encoding or decoding
+        - Validation or resource limits
+        - TypeScript types or package exports
+        - Documentation or examples
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Explain what happened and include sanitized error and warning codes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide a minimal TypeScript example or a public repository using synthetic inputs.
+      render: typescript
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add sanitized diagnostics, related references, or compatibility observations.

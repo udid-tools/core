@@ -1,0 +1,102 @@
+{
+  "name": "@udid-tools/core",
+  "version": "0.1.0-beta.1",
+  "description": "Framework-agnostic TypeScript SDK for Apple Profile Service profiles, CMS signing, verification, and device response parsing.",
+  "keywords": [
+    "apple",
+    "cms",
+    "configuration-profile",
+    "device-enrollment",
+    "ios",
+    "mobileconfig",
+    "pkcs7",
+    "pkcs12",
+    "profile-service",
+    "typescript",
+    "udid"
+  ],
+  "homepage": "https://udid-tools.github.io/core/",
+  "bugs": {
+    "url": "https://github.com/udid-tools/core/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/udid-tools/core.git"
+  },
+  "author": {
+    "name": "Alexander Tartmin",
+    "url": "https://www.linkedin.com/in/alexandertartmin",
+    "email": "hello@udid.tools"
+  },
+  "license": "MIT",
+  "type": "module",
+  "private": false,
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "SECURITY.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "packageManager": "npm@11.17.0",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "docs:dev": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro dev --root docs",
+    "docs:check": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro check --root docs",
+    "docs:build": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro build --root docs",
+    "docs:api": "typedoc",
+    "docs:api:check": "npm run docs:api && git diff --exit-code -- docs/src/content/docs/reference/api",
+    "pack:check": "npm pack --dry-run",
+    "verify": "npm run docs:api:check && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run docs:check && npm run docs:build && npm run pack:check"
+  },
+  "dependencies": {
+    "asn1js": "3.0.10",
+    "fast-xml-parser": "5.11.0",
+    "fast-xml-validator": "1.4.2",
+    "node-forge": "1.4.0",
+    "pkijs": "3.4.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@astrojs/starlight": "0.41.7",
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.18.6",
+    "@types/node-forge": "1.3.14",
+    "@vitest/coverage-v8": "4.1.11",
+    "astro": "7.2.4",
+    "cross-env": "10.1.0",
+    "eslint": "10.9.0",
+    "fast-check": "4.9.0",
+    "jiti": "2.7.0",
+    "prettier": "3.9.6",
+    "typedoc": "0.28.20",
+    "typedoc-plugin-frontmatter": "1.3.1",
+    "typedoc-plugin-markdown": "4.12.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.67.0",
+    "vitest": "4.1.11"
+  }
+}

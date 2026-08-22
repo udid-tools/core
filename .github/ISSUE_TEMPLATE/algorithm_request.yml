@@ -1,0 +1,113 @@
+name: Cryptographic algorithm support
+description: Request a new certificate container, key format, key algorithm, or digest.
+title: "[Algorithm]: "
+labels:
+  - enhancement
+  - crypto
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form helps maintainers define and test a precise compatibility addition.
+
+        ## Never upload production secrets
+
+        Do **not** attach a production private key, PKCS#12/PFX identity, passphrase, token, real device response, or confidential certificate bundle. A public certificate usually does not contain a secret, but confirm that you are permitted to share it. If test material is necessary, generate a disposable synthetic identity solely for this issue.
+
+        Report a suspected cryptographic vulnerability using [private vulnerability reporting](https://github.com/udid-tools/core/security/advisories/new).
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety and duplicate checks
+      options:
+        - label: I checked the capability matrix and searched existing issues.
+          required: true
+        - label: I will not provide production or confidential cryptographic material.
+          required: true
+        - label: Any reproduction material is disposable, synthetic, and safe to publish permanently.
+          required: true
+        - label: This is a compatibility request, not a confidential vulnerability report.
+          required: true
+
+  - type: input
+    id: container
+    attributes:
+      label: Certificate or identity container
+      description: For example PKCS#12/PFX, PEM, DER, PKCS#7, or another standard.
+      placeholder: PKCS#12/PFX
+    validations:
+      required: true
+
+  - type: input
+    id: key_format
+    attributes:
+      label: Private-key format
+      description: For example PKCS#8, encrypted PKCS#8, PKCS#1 RSA, or SEC1 EC.
+      placeholder: Encrypted PKCS#8
+    validations:
+      required: true
+
+  - type: input
+    id: key_algorithm
+    attributes:
+      label: Key algorithm and parameters
+      description: Include curve or key size where relevant.
+      placeholder: ECDSA P-256
+    validations:
+      required: true
+
+  - type: input
+    id: digest
+    attributes:
+      label: CMS digest and signature algorithm
+      placeholder: SHA-256 with ECDSA
+    validations:
+      required: true
+
+  - type: input
+    id: certificate_signature
+    attributes:
+      label: Certificate signature algorithm
+      placeholder: ecdsa-with-SHA256
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case and ecosystem
+      description: Explain who issues the identity and where the resulting CMS/profile must interoperate.
+    validations:
+      required: true
+
+  - type: textarea
+    id: interoperability
+    attributes:
+      label: Known interoperability
+      description: List tools, platforms, or OpenSSL commands that successfully consume or produce the desired format. Do not paste secrets.
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Runtime environment
+      placeholder: Node.js 22.14.0, Ubuntu 24.04
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Standards and vendor references
+      description: Link to the relevant RFCs and official vendor documentation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: synthetic_reproduction
+    attributes:
+      label: Optional synthetic reproduction
+      description: Provide commands that generate a disposable test identity or link to a safe public fixture.
+      render: shell

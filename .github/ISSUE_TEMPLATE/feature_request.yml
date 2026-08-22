@@ -1,0 +1,60 @@
+name: Feature request
+description: Propose a backward-compatible capability or developer-experience improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the developer problem before proposing an API. For cryptographic algorithm or key/container support, use the dedicated algorithm request form.
+
+        **Never include production private keys, PFX files, passphrases, tokens, or unredacted device responses.**
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight checks
+      options:
+        - label: I searched existing issues, the roadmap, and the capability matrix.
+          required: true
+        - label: This request is within Apple Profile Service or reusable core primitives; it is not a request for a complete MDM server.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Developer problem
+      description: What cannot be expressed safely or conveniently with the current public API?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Show the ideal developer experience, including a TypeScript example when useful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Explain current workarounds and why they are insufficient.
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and security impact
+      description: Could this affect defaults, public types, serialized output, validation, trust, secrets, or resource use?
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Link to relevant official Apple or standards documentation.

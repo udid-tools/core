@@ -1,0 +1,52 @@
+name: Documentation issue
+description: Report missing, unclear, inaccurate, or inaccessible documentation.
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for improving the documentation. Do not include private keys, passphrases, production certificates, tokens, or unredacted device data in examples.
+
+  - type: input
+    id: location
+    attributes:
+      label: Page or section
+      description: Link to the page or name the README/API section.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Issue type
+      options:
+        - Missing documentation
+        - Incorrect documentation
+        - Unclear explanation
+        - Broken or outdated example
+        - Broken link or reference
+        - Accessibility or rendering problem
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: Explain what would have helped you complete the task safely.
+
+  - type: input
+    id: version
+    attributes:
+      label: Relevant package or documentation version
+      placeholder: 0.1.0-beta.1 or latest

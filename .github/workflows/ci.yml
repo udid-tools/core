@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality and test suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.14.0
+          package-manager-cache: false
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Run complete verification
+        run: npm run verify
+
+  runtime-compatibility:
+    name: Node.js ${{ matrix.node-version }} compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - 22.14.0
+          - 24
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          package-manager-cache: false
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Build package
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+  packed-consumer:
+    name: Packed package consumer
+    needs:
+      - quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.14.0
+          package-manager-cache: false
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Build package
+        run: npm run build
+
+      - name: Pack and install in a clean consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_dir="${RUNNER_TEMP}/package"
+          consumer_dir="${RUNNER_TEMP}/consumer"
+          mkdir -p "${package_dir}" "${consumer_dir}"
+          tarball="$(npm pack --silent --pack-destination "${package_dir}")"
+          unexpected="$(tar --list --gzip --file "${package_dir}/${tarball}" | grep --extended-regexp --invert-match '^package/(dist(/.*)?|package.json|README.md|LICENSE|SECURITY.md)$' || true)"
+          if [[ -n "${unexpected}" ]]; then
+            echo "Packed artifact contains files outside the release allow-list:" >&2
+            echo "${unexpected}" >&2
+            exit 1
+          fi
+          cd "${consumer_dir}"
+          npm init --yes
+          npm pkg set type=module
+          npm install --ignore-scripts --no-audit --no-fund "${package_dir}/${tarball}"
+          node --input-type=module --eval "const api = await import('@udid-tools/core'); if (typeof api.generateProfile !== 'function' || typeof api.parseProfileServiceResponse !== 'function') process.exit(1);"
