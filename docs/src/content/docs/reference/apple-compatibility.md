@@ -11,6 +11,8 @@ The special Profile Service protocol is primarily documented in Apple’s archiv
 
 `0.1.0-beta.1` types the documented attribute names `UDID`, `VERSION`, `PRODUCT`, `SERIAL`, `MEID`, `IMEI`, `ICCID`, and `MAC_ADDRESS_EN0`. Availability depends on device hardware, OS, privacy behavior, and enrollment context. A requested value is not automatically guaranteed.
 
+Apple Profile Service responses may use RSA/SHA-1. Apple's archived guide requires a signed CMS response but does not prescribe the digest algorithm. Response verification accepts both RSA/SHA-1 and RSA/SHA-256.
+
 When Apple adds a field, developers can use `customDeviceAttribute` and read `raw` without waiting for a release. A library update can then normalize it additively. Reserved structural fields cannot be overridden through extensions.
 
 ## References
@@ -20,4 +22,4 @@ When Apple adds a field, developers can use `customDeviceAttribute` and read `ra
 - [Common payload keys](https://developer.apple.com/documentation/devicemanagement/commonpayloadkeys)
 - [Configuring multiple devices using profiles](https://developer.apple.com/documentation/devicemanagement/configuring-multiple-devices-using-profiles)
 
-References accessed 2026-08-22. Apple documentation and actual platform behavior take precedence over this independent implementation.
+References accessed 2026-08-24. Apple documentation and actual platform behavior take precedence over this independent implementation.

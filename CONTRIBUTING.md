@@ -9,7 +9,7 @@ fixes, documentation improvements, tests, and carefully scoped features.
 - Read [SECURITY.md](SECURITY.md) before reporting a vulnerability.
 - Review [THREAT_MODEL.md](THREAT_MODEL.md) for security boundaries.
 - Search existing issues and pull requests before opening a new one.
-- Use the algorithm request form for a new key, container, or digest algorithm.
+- Use the algorithm request form for a new caller-configurable key, container, or digest algorithm. Use the bug report form for a reproducible compatibility defect within the existing Apple Profile Service scope.
 
 Never submit a production private key, PKCS#12/PFX identity, passphrase,
 unredacted device response, or confidential certificate material. Test fixtures

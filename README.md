@@ -90,7 +90,7 @@ if (!result.ok) {
 }
 ```
 
-The default verification mode checks signature integrity using the embedded signer certificate and reports `trusted: null`. Use `trust-chain` with caller-provided anchors when signer identity matters. `mode: "none"` and unsigned parsing are explicit opt-ins.
+The default verification mode checks RSA/SHA-1 and RSA/SHA-256 signature integrity using the embedded signer certificate and reports `trusted: null`. Use `trust-chain` with caller-provided anchors when signer identity matters. `mode: "none"` and unsigned parsing are explicit opt-ins.
 
 ## Capability matrix
 
@@ -104,7 +104,8 @@ The default verification mode checks signature integrity using the embedded sign
 | Signed profile generation                   | Attached CMS/PKCS#7 SignedData                                                     |
 | Signing identity                            | PKCS#12/PFX with RSA private key                                                   |
 | Minimum signing key                         | RSA 2048 bits                                                                      |
-| Digest                                      | SHA-256                                                                            |
+| Profile signing                             | RSA/SHA-256                                                                        |
+| Response signatures                         | RSA/SHA-1 and RSA/SHA-256                                                          |
 | Certificate chain                           | Caller-provided only                                                               |
 | Response verification                       | None, signature integrity, or caller-provided trust chain                          |
 | XML plist                                   | Dictionary, array, string, integer, real, boolean, date, data                      |

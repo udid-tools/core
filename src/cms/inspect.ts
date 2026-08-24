@@ -20,8 +20,11 @@ import type { CertificateInfo, CertificateInput, ResponseVerificationOptions } f
 
 const CMS_SIGNED_DATA_OID = "1.2.840.113549.1.7.2";
 const CMS_DATA_OID = "1.2.840.113549.1.7.1";
+const SHA1_OID = "1.3.14.3.2.26";
 const SHA256_OID = "2.16.840.1.101.3.4.2.1";
-const RSA_SIGNATURE_OIDS = new Set(["1.2.840.113549.1.1.1", "1.2.840.113549.1.1.11"]);
+const RSA_ENCRYPTION_OID = "1.2.840.113549.1.1.1";
+const SHA1_WITH_RSA_OID = "1.2.840.113549.1.1.5";
+const SHA256_WITH_RSA_OID = "1.2.840.113549.1.1.11";
 const SUBJECT_KEY_IDENTIFIER_OID = "2.5.29.14";
 const CERTIFICATE_PEM_LABELS = ["CERTIFICATE", "X509 CERTIFICATE"] as const;
 const MAX_CERTIFICATE_NAME_CHARACTERS = 4_096;
@@ -239,15 +242,33 @@ function findSignerCertificate(
   return null;
 }
 
+function isSupportedSignerAlgorithm(digestAlgorithm: string, signatureAlgorithm: string): boolean {
+  if (
+    digestAlgorithm === SHA1_OID &&
+    (signatureAlgorithm === RSA_ENCRYPTION_OID || signatureAlgorithm === SHA1_WITH_RSA_OID)
+  ) {
+    return true;
+  }
+  if (
+    digestAlgorithm === SHA256_OID &&
+    (signatureAlgorithm === RSA_ENCRYPTION_OID || signatureAlgorithm === SHA256_WITH_RSA_OID)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function assertSupportedSignerAlgorithms(signedData: SignedData): void {
   for (const signerInfo of signedData.signerInfos) {
     if (
-      signerInfo.digestAlgorithm.algorithmId !== SHA256_OID ||
-      !RSA_SIGNATURE_OIDS.has(signerInfo.signatureAlgorithm.algorithmId)
+      !isSupportedSignerAlgorithm(
+        signerInfo.digestAlgorithm.algorithmId,
+        signerInfo.signatureAlgorithm.algorithmId
+      )
     ) {
       throw new UdidToolsError(
         "UNSUPPORTED_ALGORITHM",
-        "Only RSA CMS signatures using SHA-256 are supported in this beta release.",
+        "Only RSA CMS signatures using SHA-1 or SHA-256 are supported.",
         {
           details: {
             digestAlgorithm: signerInfo.digestAlgorithm.algorithmId,

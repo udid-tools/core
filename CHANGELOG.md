@@ -7,6 +7,11 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- Accept valid RSA/SHA-1 CMS responses produced by Apple Profile Service clients
+  while continuing to verify every signature and configured trust chain (#12).
+
 ## [0.1.0-beta.1] - 2026-08-22
 
 ### Added
