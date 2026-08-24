@@ -4,7 +4,7 @@
 
 Security-first TypeScript primitives for Apple Profile Service profiles: generate XML, optionally produce attached CMS/PKCS#7 SignedData, verify device responses, and parse every returned plist field without losing unknown data.
 
-> **Beta:** `0.1.0-beta.1` is ready for evaluation. Its public API follows semantic versioning, but beta releases may still contain breaking changes. MDM is intentionally out of scope.
+> **Beta:** `0.1.0-beta.2` is ready for evaluation. Its public API follows semantic versioning, but beta releases may still contain breaking changes. MDM is intentionally out of scope.
 
 ## Install
 
@@ -94,7 +94,7 @@ The default verification mode checks RSA/SHA-1 and RSA/SHA-256 signature integri
 
 ## Capability matrix
 
-| Capability                                  | `0.1.0-beta.1`                                                                     |
+| Capability                                  | `0.1.0-beta.2`                                                                     |
 | ------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Apple Profile Service payload               | Supported                                                                          |
 | Documented attributes                       | `UDID`, `VERSION`, `PRODUCT`, `SERIAL`, `MEID`, `IMEI`, `ICCID`, `MAC_ADDRESS_EN0` |

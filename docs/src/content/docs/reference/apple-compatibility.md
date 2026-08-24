@@ -9,7 +9,7 @@ The special Profile Service protocol is primarily documented in Apple’s archiv
 2. **Observed:** verified on specified platform versions with reproducible fixtures.
 3. **Extension:** accepted losslessly but not yet normalized or claimed as Apple-defined.
 
-`0.1.0-beta.1` types the documented attribute names `UDID`, `VERSION`, `PRODUCT`, `SERIAL`, `MEID`, `IMEI`, `ICCID`, and `MAC_ADDRESS_EN0`. Availability depends on device hardware, OS, privacy behavior, and enrollment context. A requested value is not automatically guaranteed.
+`0.1.0-beta.2` types the documented attribute names `UDID`, `VERSION`, `PRODUCT`, `SERIAL`, `MEID`, `IMEI`, `ICCID`, and `MAC_ADDRESS_EN0`. Availability depends on device hardware, OS, privacy behavior, and enrollment context. A requested value is not automatically guaranteed.
 
 Apple Profile Service responses may use RSA/SHA-1. Apple's archived guide requires a signed CMS response but does not prescribe the digest algorithm. Response verification accepts both RSA/SHA-1 and RSA/SHA-256.
 

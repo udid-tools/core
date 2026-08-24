@@ -7,6 +7,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.2] - 2026-08-24
+
 ### Fixed
 
 - Accept valid RSA/SHA-1 CMS responses produced by Apple Profile Service clients
@@ -28,5 +30,6 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.1...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.2...HEAD
+[0.1.0-beta.2]: https://github.com/udid-tools/core/compare/v0.1.0-beta.1...v0.1.0-beta.2
 [0.1.0-beta.1]: https://github.com/udid-tools/core/releases/tag/v0.1.0-beta.1
