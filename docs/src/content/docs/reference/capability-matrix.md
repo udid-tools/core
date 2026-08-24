@@ -1,6 +1,6 @@
 ---
 title: Capability matrix
-description: Exact implemented and deferred surface in 0.1.0-beta.1.
+description: Exact implemented and deferred surface.
 ---
 
 | Area                  | Supported                                                                                     | Deferred / excluded                                        |
@@ -13,10 +13,11 @@ description: Exact implemented and deferred surface in 0.1.0-beta.1.
 | Plist                 | XML dictionary, array, string, safe integer, real, boolean, date, data                        | Binary plist                                               |
 | Output protection     | Unsigned XML or attached CMS SignedData                                                       | Profile encryption, detached CMS                           |
 | Identity              | PKCS#12/PFX, RSA key/certificate matching, minimum 2048-bit signing key                       | PEM private keys, HSM/KMS providers, ECDSA/EdDSA           |
-| Digest/signature      | SHA-256 with RSA PKCS#1 v1.5                                                                  | SHA-1, SHA-384/512, RSA-PSS in beta                        |
+| Profile signing       | SHA-256 with RSA PKCS#1 v1.5                                                                  | SHA-1 generation, SHA-384/512, RSA-PSS                     |
+| Response signatures   | SHA-1 or SHA-256 with RSA PKCS#1 v1.5                                                         | SHA-384/512, RSA-PSS                                       |
 | Chains                | Caller-supplied embedded chain                                                                | Automatic Apple/OS chain discovery/download                |
 | Verification          | none, integrity, explicit offline trust chain                                                 | OS trust store, AIA fetching, CRL/OCSP network checks      |
 | Side effects          | none                                                                                          | Filesystem, env, network, logging, telemetry, global state |
 | Distribution          | npm and GitHub Packages design; beta dist-tag                                                 | Publication before owner review                            |
 
-New crypto capabilities enter as additive discriminated variants after an algorithm request, security review, test vectors, interoperability coverage, documentation, and an ADR.
+New caller-configurable crypto capabilities enter as additive discriminated variants after an algorithm request, security review, test vectors, interoperability coverage, documentation, and an ADR.

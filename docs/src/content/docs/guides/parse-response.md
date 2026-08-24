@@ -38,4 +38,6 @@ Known values are normalized in `attributes`; the complete null-prototype plist d
 
 Invalid signatures or untrusted chains are failures, not successful responses with `false`. The boolean union leaves room for future inspection APIs while this high-level parser remains fail closed.
 
+Signature and trust-chain modes verify both RSA/SHA-1 and RSA/SHA-256 responses used by Apple Profile Service clients.
+
 Unsigned XML is rejected unless `allowUnsigned: true`. That option exists for fixtures and tightly controlled legacy integrations, not as a production default.

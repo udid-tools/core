@@ -25,13 +25,14 @@ MDM is a separate product boundary. Do not add MDM enrollment, APNs, check-in, c
 
 - Input identity: PKCS#12/PFX.
 - Signing key: RSA.
-- Digest: SHA-256.
+- Profile-signing digest: SHA-256.
+- Response signatures: RSA/SHA-1 and RSA/SHA-256 as produced by supported Apple Profile Service clients.
 - Output: DER-encoded attached CMS/PKCS#7 SignedData.
 - Chain: optional and caller-provided.
 - Response verification: `none`, `signature`, or `trust-chain` with caller-provided roots/intermediates.
-- No revocation network lookups, certificate downloads, OS trust store, profile encryption, detached content, or alternative signing algorithms in this beta.
+- No revocation network lookups, certificate downloads, OS trust store, profile encryption, detached content, or alternative profile-signing algorithms in this beta.
 
-New algorithms require an approved issue using the algorithm-request template, threat analysis, test vectors, interoperability tests, documentation, and an ADR. Prefer adding a new discriminated identity/provider variant over changing existing fields.
+New caller-configurable algorithms require an approved issue using the algorithm-request template, threat analysis, test vectors, interoperability tests, documentation, and an ADR. A reproducible compatibility defect within the existing Apple Profile Service scope follows the bug-report process and still requires synthetic regression fixtures, interoperability evidence, and security review. Prefer adding a new discriminated identity/provider variant over changing existing fields.
 
 ## Source boundaries
 

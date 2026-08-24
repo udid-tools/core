@@ -16,6 +16,7 @@ import {
 const CONTENT_TYPE_OID = "1.2.840.113549.1.9.3";
 const MESSAGE_DIGEST_OID = "1.2.840.113549.1.9.4";
 const SIGNING_TIME_OID = "1.2.840.113549.1.9.5";
+const SHA1_OID = "1.3.14.3.2.26";
 
 interface MutableCertificateExtension {
   id?: string;
@@ -363,6 +364,32 @@ describe("CMS signing and verification", () => {
     ).rejects.toMatchObject({ code: "INVALID_SIGNATURE" });
   });
 
+  it("verifies RSA/SHA-1 and still rejects tampering", async () => {
+    const sha1 = createCustomCms(
+      content,
+      identity.leafKeys.privateKey,
+      identity.leafCertificate,
+      [identity.leafCertificate],
+      { digestAlgorithm: SHA1_OID }
+    );
+
+    const inspected = await inspectAndVerifyCms(
+      sha1,
+      { mode: "signature" },
+      resolveLimits(undefined)
+    );
+    expect(inspected.signature.valid).toBe(true);
+
+    const tampered = Uint8Array.from(sha1);
+    const contentOffset = Buffer.from(tampered).indexOf(Buffer.from(content));
+    expect(contentOffset).toBeGreaterThanOrEqual(0);
+    tampered[contentOffset + content.byteLength - 2] =
+      (tampered[contentOffset + content.byteLength - 2] ?? 0) ^ 1;
+    await expect(
+      inspectAndVerifyCms(tampered, { mode: "signature" }, resolveLimits(undefined))
+    ).rejects.toMatchObject({ code: "INVALID_SIGNATURE" });
+  });
+
   it("strictly rejects trailing DER garbage and excessive ASN.1 nesting", async () => {
     const withTrailingGarbage = new Uint8Array(signed.byteLength + 1);
     withTrailingGarbage.set(signed);
@@ -509,15 +536,15 @@ describe("CMS signing and verification", () => {
   });
 
   it("rejects unsupported signer algorithms and invalid signing material", async () => {
-    const sha1 = createCustomCms(
-      content,
-      identity.leafKeys.privateKey,
-      identity.leafCertificate,
-      [identity.leafCertificate],
-      { digestAlgorithm: "1.3.14.3.2.26" }
-    );
+    const unsupported = rewriteSignedData(signed, (signedData) => {
+      const signer = signedData.signerInfos[0];
+      if (signer === undefined) {
+        throw new Error("Synthetic CMS signer is missing");
+      }
+      signer.digestAlgorithm.algorithmId = "2.16.840.1.101.3.4.2.3";
+    });
     await expect(
-      inspectAndVerifyCms(sha1, { mode: "signature" }, resolveLimits(undefined))
+      inspectAndVerifyCms(unsupported, { mode: "signature" }, resolveLimits(undefined))
     ).rejects.toMatchObject({ code: "UNSUPPORTED_ALGORITHM" });
 
     expect(() => signCms(content, material, "sha512" as unknown as "sha256")).toThrow(
