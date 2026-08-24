@@ -1,6 +1,6 @@
 {
   "name": "@udid-tools/core",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "description": "Framework-agnostic TypeScript SDK for Apple Profile Service profiles, CMS signing, verification, and device response parsing.",
   "keywords": [
     "apple",
