@@ -1,6 +1,13 @@
 # `@udid-tools/core`
 
+[![npm version](https://img.shields.io/npm/v/%40udid-tools%2Fcore)](https://www.npmjs.com/package/@udid-tools/core)
+[![CI](https://github.com/udid-tools/core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/udid-tools/core/actions/workflows/ci.yml)
+[![Security](https://github.com/udid-tools/core/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/udid-tools/core/actions/workflows/security.yml)
+[![Coverage](https://codecov.io/gh/udid-tools/core/branch/main/graph/badge.svg)](https://codecov.io/gh/udid-tools/core)
+[![Deployment](https://img.shields.io/github/actions/workflow/status/udid-tools/core/pages.yml?branch=main&label=deployment)](https://github.com/udid-tools/core/actions/workflows/pages.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/udid-tools/core/badge)](https://scorecard.dev/viewer/?uri=github.com/udid-tools/core)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14211/badge)](https://www.bestpractices.dev/projects/14211)
+[![License: MIT](https://img.shields.io/github/license/udid-tools/core)](./LICENSE)
 
 Security-first TypeScript primitives for Apple Profile Service profiles: generate XML, optionally produce attached CMS/PKCS#7 SignedData, verify device responses, and parse every returned plist field without losing unknown data.
 
