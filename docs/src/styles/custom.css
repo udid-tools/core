@@ -30,12 +30,26 @@
   --sl-color-black: #ffffff;
 }
 
+html[data-has-hero] main > .content-panel {
+  padding-block-start: 0;
+}
+
 .hero {
   position: relative;
+  isolation: isolate;
   padding-block: clamp(3rem, 8vw, 7rem);
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline: calc(50% - 50vw);
   background:
     radial-gradient(circle at 15% 20%, rgb(0 128 255 / 12%), transparent 36rem),
     radial-gradient(circle at 85% 75%, rgb(1 95 255 / 10%), transparent 32rem);
+  pointer-events: none;
 }
 
 .hero h1 {
