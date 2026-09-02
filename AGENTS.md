@@ -50,6 +50,18 @@ New caller-configurable algorithms require an approved issue using the algorithm
 
 Dependencies point inward toward shared types/errors/limits. Profile orchestration may use plist/certificate/CMS modules; those lower layers must not import Profile Service orchestration.
 
+## Commit and pull request titles
+
+- Every commit subject and pull request title must follow Conventional Commits:
+  `<type>[optional scope][!]: <description>`.
+- Use `fix` for every defect correction, including UI and CSS defects, and `feat` for new
+  behavior. Other appropriate types include `docs`, `refactor`, `test`, `perf`, `build`, `ci`,
+  `chore`, and `revert`.
+- Never use an untyped subject or title such as `Fix ...` or `Update ...`. A bug fix must start
+  with `fix:` or `fix(scope):`.
+- Check both the commit subject and pull request title before pushing or opening the pull request.
+  Keep them compliant when amending or updating an open pull request.
+
 ## API evolution
 
 - Follow semantic versioning, including during beta.
