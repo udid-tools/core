@@ -1,6 +1,6 @@
 # `@udid-tools/core`
 
-[![npm version](https://img.shields.io/npm/v/%40udid-tools%2Fcore)](https://www.npmjs.com/package/@udid-tools/core)
+[![npm beta version](https://img.shields.io/npm/v/%40udid-tools%2Fcore/beta?label=npm%20beta)](https://www.npmjs.com/package/@udid-tools/core)
 [![CI](https://github.com/udid-tools/core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/udid-tools/core/actions/workflows/ci.yml)
 [![Security](https://github.com/udid-tools/core/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/udid-tools/core/actions/workflows/security.yml)
 [![Coverage](https://codecov.io/gh/udid-tools/core/branch/main/graph/badge.svg)](https://codecov.io/gh/udid-tools/core)
@@ -11,7 +11,7 @@
 
 Security-first TypeScript primitives for Apple Profile Service profiles: generate XML, optionally produce attached CMS/PKCS#7 SignedData, verify device responses, and parse every returned plist field without losing unknown data.
 
-> **Beta:** `0.1.0-beta.2` is ready for evaluation. Its public API follows semantic versioning, but beta releases may still contain breaking changes. MDM is intentionally out of scope.
+> **Beta:** `0.1.0-beta.3` is ready for evaluation. Its public API follows semantic versioning, but beta releases may still contain breaking changes. MDM is intentionally out of scope.
 
 ## Install
 
@@ -101,7 +101,7 @@ The default verification mode checks RSA/SHA-1 and RSA/SHA-256 signature integri
 
 ## Capability matrix
 
-| Capability                                  | `0.1.0-beta.2`                                                                     |
+| Capability                                  | `0.1.0-beta.3`                                                                     |
 | ------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Apple Profile Service payload               | Supported                                                                          |
 | Documented attributes                       | `UDID`, `VERSION`, `PRODUCT`, `SERIAL`, `MEID`, `IMEI`, `ICCID`, `MAC_ADDRESS_EN0` |
@@ -161,6 +161,12 @@ The package deliberately defines no environment-variable contract. A consuming a
 
 Read and validate them in the application, then pass their values to `signing`. This keeps secret managers, rotation, and deployment policy outside the reusable core.
 
+## Verify a release
+
+Every GitHub release includes the npm tarball, its SHA-256 checksum, a CycloneDX SBOM, and a keyless Sigstore bundle for each asset. npm also displays provenance produced by the protected GitHub Actions workflow.
+
+Follow the complete [release verification guide](https://udid-tools.github.io/core/project/release-integrity/) to verify the checksum, Sigstore identity, transparency-log inclusion, and GitHub artifact attestation before installation.
+
 ## Documentation and project policy
 
 - Documentation site: <https://udid-tools.github.io/core/>
@@ -169,7 +175,7 @@ Read and validate them in the application, then pass their values to `signing`. 
 - Security policy: [`SECURITY.md`](./SECURITY.md)
 - Changelog: [`CHANGELOG.md`](./CHANGELOG.md)
 
-The repository includes CI, CodeQL, dependency review, Scorecard, secret scanning guidance, release attestations, SBOM generation, npm provenance, GitHub Packages publishing, issue forms, and an algorithm-request template. Releases use semantic versioning; prereleases are published under the `beta` dist-tag.
+The repository includes CI, CodeQL, dependency review, Scorecard, secret scanning guidance, keyless Sigstore release signatures, GitHub artifact attestations, SBOM generation, npm provenance, GitHub Packages publishing, issue forms, and an algorithm-request template. Releases use semantic versioning; prereleases are published under the `beta` dist-tag.
 
 ## Apple references
 

@@ -7,6 +7,22 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.3] - 2026-09-13
+
+### Changed
+
+- Updated the runtime XML parser to `fast-xml-parser` 5.11.1 and refreshed the verified
+  documentation toolchain.
+- Improved the documentation layout and standardized live npm, CI, security, coverage,
+  deployment, OpenSSF, and license badges.
+
+### Security
+
+- Added a second human CODEOWNER and conventional commit and pull-request title enforcement.
+- Added keyless Sigstore signatures and verification bundles for every GitHub Release asset, in
+  addition to the existing checksum, CycloneDX SBOM, GitHub artifact attestation, and npm
+  provenance.
+
 ## [0.1.0-beta.2] - 2026-08-24
 
 ### Fixed
@@ -30,6 +46,7 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.2...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.3...HEAD
+[0.1.0-beta.3]: https://github.com/udid-tools/core/compare/v0.1.0-beta.2...v0.1.0-beta.3
 [0.1.0-beta.2]: https://github.com/udid-tools/core/compare/v0.1.0-beta.1...v0.1.0-beta.2
 [0.1.0-beta.1]: https://github.com/udid-tools/core/releases/tag/v0.1.0-beta.1

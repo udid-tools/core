@@ -75,7 +75,10 @@ the detailed guarantees, exclusions, and residual risks.
 Official releases are produced only by the protected GitHub Actions release
 environment. npm publishing uses trusted publishing with OIDC; GitHub Packages
 uses the job-scoped `GITHUB_TOKEN`. Releases are built once and the same tarball
-is published to both registries. Long-lived registry tokens must not be used.
+is published to both registries. Every GitHub Release asset is keylessly signed
+with Sigstore and accompanied by a verification bundle; the tarball also has a
+GitHub artifact attestation and npm provenance. Long-lived registry tokens must
+not be used.
 
-Consumers should verify package provenance and pin dependencies according to
-their risk model.
+Consumers should follow the documented release-integrity checks and pin
+dependencies according to their risk model.
