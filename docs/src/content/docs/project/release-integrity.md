@@ -17,34 +17,34 @@ Each GitHub Release contains:
 The workflow also records a GitHub artifact attestation for the tarball. npm Trusted Publishing
 adds registry provenance without a long-lived npm token.
 
-## Verify version 0.1.0-beta.3
+## Verify version 0.1.0-beta.4
 
 Download the immutable release assets:
 
 ```bash
-gh release download v0.1.0-beta.3 --repo udid-tools/core --dir core-release
+gh release download v0.1.0-beta.4 --repo udid-tools/core --dir core-release
 cd core-release
 ```
 
 Verify the tarball checksum on Linux:
 
 ```bash
-sha256sum --check udid-tools-core-0.1.0-beta.3.tgz.sha256
+sha256sum --check udid-tools-core-0.1.0-beta.4.tgz.sha256
 ```
 
 On macOS, use the compatible checksum command:
 
 ```bash
-shasum --algorithm 256 --check udid-tools-core-0.1.0-beta.3.tgz.sha256
+shasum --algorithm 256 --check udid-tools-core-0.1.0-beta.4.tgz.sha256
 ```
 
 Verify the tarball's keyless Sigstore signature, certificate identity, and transparency-log proof:
 
 ```bash
-cosign verify-blob udid-tools-core-0.1.0-beta.3.tgz \
-  --bundle udid-tools-core-0.1.0-beta.3.tgz.sigstore.json \
+cosign verify-blob udid-tools-core-0.1.0-beta.4.tgz \
+  --bundle udid-tools-core-0.1.0-beta.4.tgz.sigstore.json \
   --certificate-identity \
-  "https://github.com/udid-tools/core/.github/workflows/release.yml@refs/tags/v0.1.0-beta.3" \
+  "https://github.com/udid-tools/core/.github/workflows/release.yml@refs/tags/v0.1.0-beta.4" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 ```
 
@@ -52,7 +52,7 @@ Repeat `cosign verify-blob` with each SBOM or checksum file and its adjacent bun
 those assets directly. Verify the GitHub artifact attestation independently:
 
 ```bash
-gh attestation verify udid-tools-core-0.1.0-beta.3.tgz \
+gh attestation verify udid-tools-core-0.1.0-beta.4.tgz \
   --repo udid-tools/core
 ```
 
