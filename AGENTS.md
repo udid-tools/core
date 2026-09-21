@@ -4,7 +4,7 @@ This file is the durable engineering context for humans and coding agents workin
 
 ## Product intent
 
-Build a small, framework-agnostic, server-side TypeScript core for Apple Profile Service profile generation, optional signing, CMS response verification, and lossless response parsing. The current release target is `0.1.0-beta.4` under the npm scope `@udid-tools`.
+Build a small, framework-agnostic, server-side TypeScript core for Apple Profile Service profile generation, optional signing, CMS response verification, and lossless response parsing. The current release target is `0.1.0-beta.5` under the npm scope `@udid-tools`.
 
 MDM is a separate product boundary. Do not add MDM enrollment, APNs, check-in, commands, declarative management, SCEP orchestration, profile delivery state machines, HTTP servers, persistence, or UI code here. A future MDM package may reuse stable low-level primitives without changing this package’s Profile Service contract.
 
