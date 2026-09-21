@@ -7,6 +7,18 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.5] - 2026-09-21
+
+### Changed
+
+- Refreshed the verified documentation and test toolchain with Starlight 0.42.1, Astro 7.3.3,
+  `fast-check` 4.10.1, and Prettier 3.9.8. The runtime API and runtime dependencies are unchanged
+  from `0.1.0-beta.4`.
+
+### Security
+
+- Updated the pinned Codecov Action to 7.1.1 and the pinned CodeQL Action to 4.38.1.
+
 ## [0.1.0-beta.4] - 2026-09-14
 
 ### Changed
@@ -59,7 +71,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.4...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.5...HEAD
+[0.1.0-beta.5]: https://github.com/udid-tools/core/compare/v0.1.0-beta.4...v0.1.0-beta.5
 [0.1.0-beta.4]: https://github.com/udid-tools/core/compare/v0.1.0-beta.3...v0.1.0-beta.4
 [0.1.0-beta.3]: https://github.com/udid-tools/core/compare/v0.1.0-beta.2...v0.1.0-beta.3
 [0.1.0-beta.2]: https://github.com/udid-tools/core/compare/v0.1.0-beta.1...v0.1.0-beta.2
