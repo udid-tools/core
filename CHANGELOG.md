@@ -13,6 +13,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 - Updated the transitive documentation dependency `devalue` to 5.9.4, resolving
   GHSA-9rgm-9g3h-6x36. Runtime dependencies and the public API are unchanged.
+- Pinned the clean-consumer smoke-test dependency tree with a dedicated lockfile and `npm ci`
+  in both CI and the release workflow.
 
 ## [0.1.0-beta.5] - 2026-09-21
 

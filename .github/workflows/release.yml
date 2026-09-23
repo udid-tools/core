@@ -89,11 +89,12 @@ jobs:
         run: |
           set -euo pipefail
           consumer_dir="${RUNNER_TEMP}/consumer"
+          consumer_fixture="${GITHUB_WORKSPACE}/tests/consumer-smoke"
           mkdir "${consumer_dir}"
+          cp "${consumer_fixture}/package.json" "${consumer_fixture}/package-lock.json" "${consumer_dir}/"
+          cp "${GITHUB_WORKSPACE}/release/${TARBALL}" "${consumer_dir}/udid-tools-core.tgz"
           cd "${consumer_dir}"
-          npm init --yes
-          npm pkg set type=module
-          npm install --ignore-scripts --no-audit --no-fund "${GITHUB_WORKSPACE}/release/${TARBALL}"
+          npm ci --ignore-scripts --no-audit --no-fund
           node --input-type=module --eval "const api = await import('@udid-tools/core'); if (typeof api.generateProfile !== 'function' || typeof api.parseProfileServiceResponse !== 'function') process.exit(1);"
 
       - name: Attest release tarball
