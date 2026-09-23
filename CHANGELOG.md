@@ -7,6 +7,13 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.6] - 2026-09-23
+
+### Security
+
+- Updated the transitive documentation dependency `devalue` to 5.9.4, resolving
+  GHSA-9rgm-9g3h-6x36. Runtime dependencies and the public API are unchanged.
+
 ## [0.1.0-beta.5] - 2026-09-21
 
 ### Changed
@@ -71,7 +78,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.5...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.6...HEAD
+[0.1.0-beta.6]: https://github.com/udid-tools/core/compare/v0.1.0-beta.5...v0.1.0-beta.6
 [0.1.0-beta.5]: https://github.com/udid-tools/core/compare/v0.1.0-beta.4...v0.1.0-beta.5
 [0.1.0-beta.4]: https://github.com/udid-tools/core/compare/v0.1.0-beta.3...v0.1.0-beta.4
 [0.1.0-beta.3]: https://github.com/udid-tools/core/compare/v0.1.0-beta.2...v0.1.0-beta.3
