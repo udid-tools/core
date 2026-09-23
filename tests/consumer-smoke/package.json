@@ -1,0 +1,9 @@
+{
+  "name": "@udid-tools/core-consumer-smoke",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@udid-tools/core": "file:udid-tools-core.tgz"
+  }
+}

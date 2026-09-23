@@ -143,6 +143,7 @@ jobs:
           set -euo pipefail
           package_dir="${RUNNER_TEMP}/package"
           consumer_dir="${RUNNER_TEMP}/consumer"
+          consumer_fixture="${GITHUB_WORKSPACE}/tests/consumer-smoke"
           mkdir -p "${package_dir}" "${consumer_dir}"
           tarball="$(npm pack --silent --pack-destination "${package_dir}")"
           unexpected="$(tar --list --gzip --file "${package_dir}/${tarball}" | grep --extended-regexp --invert-match '^package/(dist(/.*)?|package.json|README.md|LICENSE|SECURITY.md)$' || true)"
@@ -151,8 +152,8 @@ jobs:
             echo "${unexpected}" >&2
             exit 1
           fi
+          cp "${consumer_fixture}/package.json" "${consumer_fixture}/package-lock.json" "${consumer_dir}/"
+          cp "${package_dir}/${tarball}" "${consumer_dir}/udid-tools-core.tgz"
           cd "${consumer_dir}"
-          npm init --yes
-          npm pkg set type=module
-          npm install --ignore-scripts --no-audit --no-fund "${package_dir}/${tarball}"
+          npm ci --ignore-scripts --no-audit --no-fund
           node --input-type=module --eval "const api = await import('@udid-tools/core'); if (typeof api.generateProfile !== 'function' || typeof api.parseProfileServiceResponse !== 'function') process.exit(1);"
