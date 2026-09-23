@@ -98,9 +98,17 @@ jobs:
           node --input-type=module --eval "const api = await import('@udid-tools/core'); if (typeof api.generateProfile !== 'function' || typeof api.parseProfileServiceResponse !== 'function') process.exit(1);"
 
       - name: Attest release tarball
+        id: provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: release/${{ steps.package.outputs.tarball }}
+
+      - name: Add portable provenance bundle
+        shell: bash
+        env:
+          PROVENANCE_BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
+          TARBALL: ${{ steps.package.outputs.tarball }}
+        run: cp "${PROVENANCE_BUNDLE}" "release/${TARBALL}.provenance.intoto.jsonl"
 
       - name: Sign and verify every release asset
         uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9 # v3.5.0
