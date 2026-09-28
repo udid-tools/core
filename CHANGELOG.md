@@ -7,6 +7,20 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.7] - 2026-09-28
+
+### Changed
+
+- Updated the verified runtime, documentation, test, and GitHub Actions dependencies. The public
+  API and supported Profile Service feature set are unchanged from `0.1.0-beta.6`.
+
+### Security
+
+- Refreshed the temporary packed-consumer lockfile from the exact release tarball and the
+  repository's locked runtime dependency tree before its offline `npm ci` smoke test.
+- Published the portable provenance bundle with the release assets and documented the OpenSSF
+  Best Practices self-attestation.
+
 ## [0.1.0-beta.6] - 2026-09-23
 
 ### Security
@@ -80,7 +94,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.6...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.7...HEAD
+[0.1.0-beta.7]: https://github.com/udid-tools/core/compare/v0.1.0-beta.6...v0.1.0-beta.7
 [0.1.0-beta.6]: https://github.com/udid-tools/core/compare/v0.1.0-beta.5...v0.1.0-beta.6
 [0.1.0-beta.5]: https://github.com/udid-tools/core/compare/v0.1.0-beta.4...v0.1.0-beta.5
 [0.1.0-beta.4]: https://github.com/udid-tools/core/compare/v0.1.0-beta.3...v0.1.0-beta.4
