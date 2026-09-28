@@ -154,6 +154,7 @@ jobs:
           fi
           cp "${consumer_fixture}/package.json" "${consumer_fixture}/package-lock.json" "${consumer_dir}/"
           cp "${package_dir}/${tarball}" "${consumer_dir}/udid-tools-core.tgz"
+          node scripts/refresh-consumer-lock.mjs "${consumer_dir}" "@udid-tools/core" "${consumer_dir}/udid-tools-core.tgz"
           cd "${consumer_dir}"
           npm ci --ignore-scripts --no-audit --no-fund
           node --input-type=module --eval "const api = await import('@udid-tools/core'); if (typeof api.generateProfile !== 'function' || typeof api.parseProfileServiceResponse !== 'function') process.exit(1);"
