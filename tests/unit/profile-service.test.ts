@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
-import forge from "node-forge";
 
 import { loadSigningMaterial } from "../../src/certificates/index.js";
 import { inspectAndVerifyCms, signCms } from "../../src/cms/index.js";
@@ -15,15 +14,12 @@ import {
 } from "../../src/index.js";
 import {
   certificateDer,
+  createCms,
   createPkcs12,
   createSyntheticIdentity,
 } from "../helpers/synthetic-identity.js";
 
 const FIXED_UUID = "B9E26D5B-31E9-4B21-A940-2F1743C1DD0E";
-const CONTENT_TYPE_OID = "1.2.840.113549.1.9.3";
-const MESSAGE_DIGEST_OID = "1.2.840.113549.1.9.4";
-const SHA1_OID = "1.3.14.3.2.26";
-const SIGNING_TIME_OID = "1.2.840.113549.1.9.5";
 
 function unsignedOptions(): ProfileGenerationOptions {
   return {
@@ -72,22 +68,12 @@ function createSignedResponse(options: { readonly sha1?: boolean } = {}): {
 
   let bytes = signCms(content, material);
   if (options.sha1 === true) {
-    const signedData = forge.pkcs7.createSignedData();
-    signedData.content = forge.util.createBuffer(Buffer.from(content).toString("latin1"), "raw");
-    signedData.addCertificate(identity.leafCertificate);
-    signedData.addSigner({
-      authenticatedAttributes: [
-        { type: CONTENT_TYPE_OID, value: "1.2.840.113549.1.7.1" },
-        { type: MESSAGE_DIGEST_OID },
-        { type: SIGNING_TIME_OID },
-      ],
-      certificate: identity.leafCertificate,
-      digestAlgorithm: SHA1_OID,
-      key: identity.leafKeys.privateKey,
-    });
-    signedData.sign({ detached: false });
-    bytes = Uint8Array.from(
-      Buffer.from(forge.asn1.toDer(signedData.toAsn1()).getBytes(), "latin1")
+    bytes = createCms(
+      content,
+      identity.leafKeys.privateKey,
+      identity.leafCertificate,
+      [identity.leafCertificate],
+      { digestAlgorithm: "sha1" }
     );
   }
 

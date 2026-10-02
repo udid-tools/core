@@ -1,5 +1,8 @@
+import { createHash, createHmac } from "node:crypto";
+
+import * as asn1js from "asn1js";
+import { AuthenticatedSafe, CertBag, PFX, SafeContents } from "pkijs";
 import { beforeAll, describe, expect, it } from "vitest";
-import forge from "node-forge";
 
 import { decodeBinaryInput, loadSigningMaterial } from "../../src/certificates/index.js";
 import { decodePem } from "../../src/certificates/binary-input.js";
@@ -8,10 +11,137 @@ import { resolveLimits } from "../../src/limits.js";
 import type { SigningOptions } from "../../src/types.js";
 import {
   certificatePem,
+  certificateDer,
+  createEcPkcs12,
   createPkcs12,
   createSyntheticIdentity,
   type SyntheticIdentity,
 } from "../helpers/synthetic-identity.js";
+
+function repeated(value: Uint8Array, length: number): Uint8Array {
+  const result = new Uint8Array(length);
+  for (let index = 0; index < length; index += 1) {
+    result[index] = value[index % value.byteLength] ?? 0;
+  }
+  return result;
+}
+
+function addBigEndian(left: Uint8Array, right: Uint8Array): Uint8Array {
+  const result = new Uint8Array(left.byteLength);
+  let carry = 0;
+  for (let index = left.byteLength - 1; index >= 0; index -= 1) {
+    const sum = (left[index] ?? 0) + (right[index] ?? 0) + carry;
+    result[index] = sum & 0xff;
+    carry = sum >>> 8;
+  }
+  return result;
+}
+
+function pkcs12Kdf(
+  passphrase: string,
+  salt: Uint8Array,
+  iterations: number,
+  purpose: number,
+  length: number,
+  hashAlgorithm: "sha1" | "sha256"
+): Uint8Array {
+  const hashLength = hashAlgorithm === "sha1" ? 20 : 32;
+  const blockLength = 64;
+  const password = Buffer.from(`${passphrase}\u0000`, "utf16le");
+  password.swap16();
+  const diversifier = new Uint8Array(blockLength).fill(purpose);
+  const saltBlock =
+    salt.byteLength === 0
+      ? new Uint8Array()
+      : repeated(salt, blockLength * Math.ceil(salt.byteLength / blockLength));
+  const passwordBlock =
+    password.byteLength === 0
+      ? new Uint8Array()
+      : repeated(password, blockLength * Math.ceil(password.byteLength / blockLength));
+  const source = new Uint8Array(saltBlock.byteLength + passwordBlock.byteLength);
+  source.set(saltBlock);
+  source.set(passwordBlock, saltBlock.byteLength);
+  const output = new Uint8Array(Math.ceil(length / hashLength) * hashLength);
+
+  for (let block = 0; block < output.byteLength / hashLength; block += 1) {
+    let digest = createHash(hashAlgorithm).update(diversifier).update(source).digest();
+    for (let iteration = 1; iteration < iterations; iteration += 1) {
+      digest = createHash(hashAlgorithm).update(digest).digest();
+    }
+    output.set(digest, block * hashLength);
+
+    const b = repeated(Uint8Array.from(digest), blockLength);
+    const one = new Uint8Array(blockLength);
+    one[blockLength - 1] = 1;
+    for (let offset = 0; offset < source.byteLength; offset += blockLength) {
+      const chunk = source.subarray(offset, offset + blockLength);
+      source.set(addBigEndian(addBigEndian(chunk, b), one), offset);
+    }
+  }
+
+  return output.subarray(0, length);
+}
+
+function rewritePfx(input: Uint8Array, passphrase: string, mutate: (pfx: PFX) => void): Uint8Array {
+  const pfx = PFX.fromBER(Uint8Array.from(input).buffer);
+  mutate(pfx);
+  if (pfx.authSafe.content instanceof asn1js.OctetString && pfx.macData !== undefined) {
+    const content = Uint8Array.from(new Uint8Array(pfx.authSafe.content.getValue()));
+    const digestOid = pfx.macData.mac.digestAlgorithm.algorithmId;
+    const hashAlgorithm = digestOid === "1.3.14.3.2.26" ? "sha1" : "sha256";
+    const key = pkcs12Kdf(
+      passphrase,
+      Uint8Array.from(new Uint8Array(pfx.macData.macSalt.valueBlock.valueHexView)),
+      pfx.macData.iterations ?? 1,
+      3,
+      hashAlgorithm === "sha1" ? 20 : 32,
+      hashAlgorithm
+    );
+    pfx.macData.mac.digest = new asn1js.OctetString({
+      valueHex: Uint8Array.from(createHmac(hashAlgorithm, key).update(content).digest()).buffer,
+    });
+  }
+  return Uint8Array.from(new Uint8Array(pfx.toSchema().toBER(false)));
+}
+
+function rewriteAuthenticatedSafe(
+  input: Uint8Array,
+  passphrase: string,
+  mutate: (authenticatedSafe: AuthenticatedSafe) => void
+): Uint8Array {
+  return rewritePfx(input, passphrase, (pfx) => {
+    if (!(pfx.authSafe.content instanceof asn1js.OctetString)) {
+      throw new Error("Expected an authenticated safe content octet string.");
+    }
+    const authenticatedSafe = AuthenticatedSafe.fromBER(pfx.authSafe.content.getValue());
+    mutate(authenticatedSafe);
+    pfx.authSafe.content = new asn1js.OctetString({
+      valueHex: authenticatedSafe.toSchema().toBER(false),
+    });
+  });
+}
+
+function rewriteSafeContents(
+  input: Uint8Array,
+  passphrase: string,
+  mutate: (safeContents: SafeContents) => void
+): Uint8Array {
+  return rewriteAuthenticatedSafe(input, passphrase, (authenticatedSafe) => {
+    for (const contentInfo of authenticatedSafe.safeContents) {
+      if (
+        contentInfo.contentType !== "1.2.840.113549.1.7.1" ||
+        !(contentInfo.content instanceof asn1js.OctetString)
+      ) {
+        continue;
+      }
+      const safeContents = SafeContents.fromBER(contentInfo.content.getValue());
+      mutate(safeContents);
+      contentInfo.content = new asn1js.OctetString({
+        valueHex: safeContents.toSchema().toBER(false),
+      });
+    }
+  });
+}
 
 describe("certificate inputs and PKCS#12 identities", () => {
   let identity: SyntheticIdentity;
@@ -115,8 +245,12 @@ describe("certificate inputs and PKCS#12 identities", () => {
     };
 
     const material = loadSigningMaterial(signing, resolveLimits(undefined));
-    expect(material.signerCertificate.serialNumber).toBe("02");
-    expect(material.privateKey.n.compareTo(identity.leafKeys.privateKey.n)).toBe(0);
+    expect(
+      Buffer.from(material.signerCertificate.serialNumber.valueBlock.valueHexView).toString("hex")
+    ).toBe("02");
+    expect(Buffer.from(material.privateKey.export({ format: "der", type: "pkcs8" }))).toEqual(
+      Buffer.from(identity.leafKeys.privateKey.export({ format: "der", type: "pkcs8" }))
+    );
     expect(material.certificates).toHaveLength(3);
     expect(material.warnings).toContainEqual(
       expect.objectContaining({ code: "DUPLICATE_CERTIFICATE_IGNORED" })
@@ -141,23 +275,6 @@ describe("certificate inputs and PKCS#12 identities", () => {
       expect((error as UdidToolsError).code).toBe("INCORRECT_PASSPHRASE");
       expect((error as Error).message).not.toContain("super-secret-wrong-passphrase");
     }
-  });
-
-  it("rejects a PKCS#12 identity whose key has no matching certificate", () => {
-    const mismatched = createPkcs12(
-      identity.leafKeys.privateKey,
-      [identity.unrelatedCertificate, identity.rootCertificate],
-      "passphrase"
-    );
-
-    expect(() =>
-      loadSigningMaterial(
-        {
-          identity: { data: mismatched, passphrase: "passphrase", type: "pkcs12" },
-        },
-        resolveLimits(undefined)
-      )
-    ).toThrow(expect.objectContaining({ code: "CERTIFICATE_KEY_MISMATCH" }));
   });
 
   it("enforces PKCS#12 and certificate-count limits before crypto work", () => {
@@ -282,9 +399,43 @@ describe("certificate inputs and PKCS#12 identities", () => {
         limits
       )
     ).toThrow(expect.objectContaining({ code: "INVALID_PRIVATE_KEY" }));
+
+    const ecPkcs12 = createEcPkcs12("passphrase");
+    expect(() =>
+      loadSigningMaterial(
+        { identity: { data: ecPkcs12, passphrase: "passphrase", type: "pkcs12" } },
+        limits
+      )
+    ).toThrow(expect.objectContaining({ code: "UNSUPPORTED_ALGORITHM" }));
   });
 
   it("rejects ambiguous identities and expired signing certificates", () => {
+    const mismatched = rewriteSafeContents(
+      createPkcs12(
+        identity.leafKeys.privateKey,
+        [identity.leafCertificate, identity.unrelatedCertificate],
+        "passphrase"
+      ),
+      "passphrase",
+      (safeContents) => {
+        const leafDer = Buffer.from(certificateDer(identity.leafCertificate));
+        safeContents.safeBags = safeContents.safeBags.filter(
+          (bag) =>
+            !(
+              bag.bagValue instanceof CertBag &&
+              bag.bagValue.certValue instanceof asn1js.OctetString &&
+              Buffer.from(new Uint8Array(bag.bagValue.certValue.getValue())).equals(leafDer)
+            )
+        );
+      }
+    );
+    expect(() =>
+      loadSigningMaterial(
+        { identity: { data: mismatched, passphrase: "passphrase", type: "pkcs12" } },
+        resolveLimits(undefined)
+      )
+    ).toThrow(expect.objectContaining({ code: "CERTIFICATE_KEY_MISMATCH" }));
+
     const ambiguous = createPkcs12(
       identity.leafKeys.privateKey,
       [identity.leafCertificate, identity.leafCertificate],
@@ -298,11 +449,7 @@ describe("certificate inputs and PKCS#12 identities", () => {
     ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
 
     const expiredIdentity = createSyntheticIdentity();
-    expiredIdentity.leafCertificate.validity.notAfter = new Date(Date.now() - 1_000);
-    expiredIdentity.leafCertificate.sign(
-      expiredIdentity.rootKeys.privateKey,
-      forge.md.sha256.create()
-    );
+    expiredIdentity.leafCertificate.notAfter.value = new Date(Date.now() - 1_000);
     const expired = createPkcs12(
       expiredIdentity.leafKeys.privateKey,
       [expiredIdentity.leafCertificate, expiredIdentity.rootCertificate],
@@ -318,14 +465,8 @@ describe("certificate inputs and PKCS#12 identities", () => {
 
   it("warns about certificates that are not valid yet or expire soon", () => {
     const futureIdentity = createSyntheticIdentity();
-    futureIdentity.leafCertificate.validity.notBefore = new Date(Date.now() + 24 * 60 * 60 * 1_000);
-    futureIdentity.leafCertificate.validity.notAfter = new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1_000
-    );
-    futureIdentity.leafCertificate.sign(
-      futureIdentity.rootKeys.privateKey,
-      forge.md.sha256.create()
-    );
+    futureIdentity.leafCertificate.notBefore.value = new Date(Date.now() + 24 * 60 * 60 * 1_000);
+    futureIdentity.leafCertificate.notAfter.value = new Date(Date.now() + 7 * 24 * 60 * 60 * 1_000);
     const future = createPkcs12(
       futureIdentity.leafKeys.privateKey,
       [futureIdentity.leafCertificate, futureIdentity.rootCertificate],
@@ -351,7 +492,220 @@ describe("certificate inputs and PKCS#12 identities", () => {
       },
       resolveLimits(undefined)
     );
-    expect(material.signerCertificate.serialNumber).toBe("02");
+    expect(
+      Buffer.from(material.signerCertificate.serialNumber.valueBlock.valueHexView).toString("hex")
+    ).toBe("02");
+  });
+
+  it("accepts plaintext key bags and SHA-256 PKCS#12 MACs", () => {
+    const plaintextKeyBag = createPkcs12(
+      identity.leafKeys.privateKey,
+      [identity.leafCertificate, identity.rootCertificate],
+      "passphrase",
+      { keyEncryption: "none", macAlgorithm: "sha256" }
+    );
+    const material = loadSigningMaterial(
+      { identity: { data: plaintextKeyBag, passphrase: "passphrase", type: "pkcs12" } },
+      resolveLimits(undefined)
+    );
+    expect(material.signerCertificate.serialNumber.valueBlock.valueDec).toBe(2);
+  });
+
+  it("rejects PKCS#12 identities without a MAC or with encrypted safe contents", () => {
+    const withoutMac = createPkcs12(
+      identity.leafKeys.privateKey,
+      [identity.leafCertificate],
+      "passphrase",
+      { includeMac: false }
+    );
+    expect(() =>
+      loadSigningMaterial(
+        { identity: { data: withoutMac, passphrase: "passphrase", type: "pkcs12" } },
+        resolveLimits(undefined)
+      )
+    ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+
+    const encryptedSafeContents = createPkcs12(
+      identity.leafKeys.privateKey,
+      [identity.leafCertificate],
+      "passphrase",
+      { certificateEncryption: "pbe-sha1-3des" }
+    );
+    expect(() =>
+      loadSigningMaterial(
+        {
+          identity: { data: encryptedSafeContents, passphrase: "passphrase", type: "pkcs12" },
+        },
+        resolveLimits(undefined)
+      )
+    ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+  });
+
+  it("rejects an authenticated safe with an unsupported content type", () => {
+    const unsupported = rewritePfx(pkcs12, "correct horse battery staple", (pfx) => {
+      pfx.authSafe.contentType = "1.2.840.113549.1.7.6";
+    });
+    expect(() =>
+      loadSigningMaterial(
+        {
+          identity: {
+            data: unsupported,
+            passphrase: "correct horse battery staple",
+            type: "pkcs12",
+          },
+        },
+        resolveLimits(undefined)
+      )
+    ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+  });
+
+  it("rejects unsupported PKCS#12 MAC and key-encryption algorithms", () => {
+    const unsupportedMac = rewritePfx(pkcs12, "correct horse battery staple", (pfx) => {
+      pfx.macData!.mac.digestAlgorithm.algorithmId = "1.2.3.4";
+    });
+    expect(() =>
+      loadSigningMaterial(
+        {
+          identity: {
+            data: unsupportedMac,
+            passphrase: "correct horse battery staple",
+            type: "pkcs12",
+          },
+        },
+        resolveLimits(undefined)
+      )
+    ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+
+    const unsupportedKeyEncryption = rewriteSafeContents(
+      pkcs12,
+      "correct horse battery staple",
+      (safeContents) => {
+        const keyBag = safeContents.safeBags.find(
+          (bag) => bag.bagId === "1.2.840.113549.1.12.10.1.2"
+        );
+        if (keyBag !== undefined) {
+          (
+            keyBag.bagValue as { encryptionAlgorithm: { algorithmId: string } }
+          ).encryptionAlgorithm.algorithmId = "1.2.3.4";
+        }
+      }
+    );
+    expect(() =>
+      loadSigningMaterial(
+        {
+          identity: {
+            data: unsupportedKeyEncryption,
+            passphrase: "correct horse battery staple",
+            type: "pkcs12",
+          },
+        },
+        resolveLimits(undefined)
+      )
+    ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+  });
+
+  it("rejects malformed PKCS#12 PBE parameters and certificate bags", () => {
+    const invalidParameterVariants = [
+      (bag: { bagValue: unknown }) => {
+        (
+          bag.bagValue as { encryptionAlgorithm: { algorithmParams: unknown } }
+        ).encryptionAlgorithm.algorithmParams = new asn1js.Null();
+      },
+      (bag: { bagValue: unknown }) => {
+        (
+          bag.bagValue as { encryptionAlgorithm: { algorithmParams: unknown } }
+        ).encryptionAlgorithm.algorithmParams = new asn1js.Sequence({
+          value: [new asn1js.Integer({ value: 1 }), new asn1js.Integer({ value: 1 })],
+        });
+      },
+      (bag: { bagValue: unknown }) => {
+        (
+          bag.bagValue as { encryptionAlgorithm: { algorithmParams: unknown } }
+        ).encryptionAlgorithm.algorithmParams = new asn1js.Sequence({
+          value: [
+            new asn1js.OctetString({ valueHex: new Uint8Array([1]).buffer }),
+            new asn1js.Integer({ value: 0 }),
+          ],
+        });
+      },
+    ];
+
+    for (const mutateParameters of invalidParameterVariants) {
+      const malformed = rewriteSafeContents(
+        pkcs12,
+        "correct horse battery staple",
+        (safeContents) => {
+          const keyBag = safeContents.safeBags.find(
+            (bag) => bag.bagId === "1.2.840.113549.1.12.10.1.2"
+          );
+          if (keyBag !== undefined) mutateParameters(keyBag);
+        }
+      );
+      expect(() =>
+        loadSigningMaterial(
+          {
+            identity: {
+              data: malformed,
+              passphrase: "correct horse battery staple",
+              type: "pkcs12",
+            },
+          },
+          resolveLimits(undefined)
+        )
+      ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+    }
+
+    const malformedCertificateBag = rewriteSafeContents(
+      pkcs12,
+      "correct horse battery staple",
+      (safeContents) => {
+        for (const bag of safeContents.safeBags) {
+          if (bag.bagValue instanceof CertBag) {
+            bag.bagValue = new CertBag({
+              certId: "1.2.3.4",
+              certValue: bag.bagValue.certValue,
+            });
+          }
+        }
+      }
+    );
+    expect(() =>
+      loadSigningMaterial(
+        {
+          identity: {
+            data: malformedCertificateBag,
+            passphrase: "correct horse battery staple",
+            type: "pkcs12",
+          },
+        },
+        resolveLimits(undefined)
+      )
+    ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+  });
+
+  it("enforces the PKCS#12 private-key count limit", () => {
+    const duplicateKey = rewriteSafeContents(
+      pkcs12,
+      "correct horse battery staple",
+      (safeContents) => {
+        const keyBag = safeContents.safeBags.find(
+          (bag) => bag.bagId === "1.2.840.113549.1.12.10.1.2"
+        );
+        if (keyBag !== undefined) safeContents.safeBags.push(keyBag);
+      }
+    );
+    expect(() =>
+      loadSigningMaterial(
+        {
+          identity: {
+            data: duplicateKey,
+            passphrase: "correct horse battery staple",
+            type: "pkcs12",
+          },
+        },
+        resolveLimits({ maxCertificates: 1 })
+      )
+    ).toThrow(expect.objectContaining({ code: "INPUT_TOO_LARGE" }));
   });
 
   it("rejects malformed and oversized certificates in an explicit chain", () => {
