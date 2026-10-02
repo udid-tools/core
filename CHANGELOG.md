@@ -7,6 +7,20 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.8] - 2026-10-03
+
+### Changed
+
+- Replaced the vulnerable `node-forge` runtime path with Node.js crypto and PKI.js while
+  preserving the documented PKCS#12/RSA/SHA-256 signing scope.
+- Added bounded ASN.1 preflight checks before every PKCS#12 parsing layer and expanded hostile
+  PKCS#12 compatibility coverage.
+
+### Security
+
+- Updated the pinned `brace-expansion`, `fast-uri`, and `markdown-it` dependency versions and
+  removed `node-forge` from the runtime and lockfiles.
+
 ## [0.1.0-beta.7] - 2026-09-28
 
 ### Changed
@@ -94,7 +108,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.7...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.8...HEAD
+[0.1.0-beta.8]: https://github.com/udid-tools/core/compare/v0.1.0-beta.7...v0.1.0-beta.8
 [0.1.0-beta.7]: https://github.com/udid-tools/core/compare/v0.1.0-beta.6...v0.1.0-beta.7
 [0.1.0-beta.6]: https://github.com/udid-tools/core/compare/v0.1.0-beta.5...v0.1.0-beta.6
 [0.1.0-beta.5]: https://github.com/udid-tools/core/compare/v0.1.0-beta.4...v0.1.0-beta.5
