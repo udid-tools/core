@@ -266,6 +266,7 @@ function parsePkcs12(signing: SigningOptions, limits: ResourceLimits): ParsedPkc
   });
 
   try {
+    preflightDer(bytes, limits);
     const pfx = PFX.fromBER(toArrayBuffer(bytes));
     if (
       pfx.authSafe.contentType !== "1.2.840.113549.1.7.1" ||
@@ -275,6 +276,7 @@ function parsePkcs12(signing: SigningOptions, limits: ResourceLimits): ParsedPkc
     }
     const authSafeContent = Uint8Array.from(new Uint8Array(pfx.authSafe.content.getValue()));
     verifyPkcs12Mac(pfx, authSafeContent, passphrase);
+    preflightDer(authSafeContent, limits);
     const authenticatedSafe = AuthenticatedSafe.fromBER(toArrayBuffer(authSafeContent));
     const certificates: Certificate[] = [];
     const privateKeys: KeyObject[] = [];
@@ -286,7 +288,9 @@ function parsePkcs12(signing: SigningOptions, limits: ResourceLimits): ParsedPkc
       ) {
         throw new Error("Encrypted PKCS#12 safe contents are not supported.");
       }
-      const contents = SafeContents.fromBER(contentInfo.content.getValue());
+      const safeContentsBytes = Uint8Array.from(new Uint8Array(contentInfo.content.getValue()));
+      preflightDer(safeContentsBytes, limits);
+      const contents = SafeContents.fromBER(toArrayBuffer(safeContentsBytes));
       for (const bag of contents.safeBags) {
         if (bag.bagId === CERTIFICATE_BAG_OID && bag.bagValue instanceof CertBag) {
           if (
