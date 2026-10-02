@@ -46,6 +46,13 @@ export interface SyntheticIdentityOptions {
   readonly leafKeyBits?: number;
 }
 
+export interface Pkcs12Options {
+  readonly certificateEncryption?: "none" | "pbe-sha1-3des";
+  readonly includeMac?: boolean;
+  readonly keyEncryption?: "none" | "pbe-sha1-3des";
+  readonly macAlgorithm?: "sha1" | "sha256";
+}
+
 function keyPem(key: KeyObject): string {
   return key.export({ format: "pem", type: "pkcs8" }).toString();
 }
@@ -206,7 +213,8 @@ export function certificatePem(certificate: Certificate): string {
 export function createPkcs12(
   privateKey: KeyObject | null,
   certificates: readonly Certificate[] | null,
-  passphrase: string
+  passphrase: string,
+  options: Pkcs12Options = {}
 ): Uint8Array {
   const directory = mkdtempSync(join(tmpdir(), "udid-tools-p12-"));
   try {
@@ -253,13 +261,13 @@ export function createPkcs12(
       outputPath,
       "-passout",
       `file:${passwordPath}`,
-      "-macalg",
-      "sha1",
       "-keypbe",
-      "PBE-SHA1-3DES",
+      options.keyEncryption === "none" ? "NONE" : "PBE-SHA1-3DES",
       "-certpbe",
-      "NONE",
+      options.certificateEncryption === "pbe-sha1-3des" ? "PBE-SHA1-3DES" : "NONE",
     ];
+    if (options.includeMac === false) args.push("-nomac");
+    else args.push("-macalg", options.macAlgorithm ?? "sha1");
     if (privateKey === null) args.push("-nokeys");
     else args.push("-inkey", keyPath);
     if (certificates === null || certificates.length === 0) args.push("-nocerts");

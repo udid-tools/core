@@ -1,3 +1,4 @@
+import { PFX } from "pkijs";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { decodeBinaryInput, loadSigningMaterial } from "../../src/certificates/index.js";
@@ -11,6 +12,12 @@ import {
   createSyntheticIdentity,
   type SyntheticIdentity,
 } from "../helpers/synthetic-identity.js";
+
+function rewritePfx(input: Uint8Array, mutate: (pfx: PFX) => void): Uint8Array {
+  const pfx = PFX.fromBER(Uint8Array.from(input).buffer);
+  mutate(pfx);
+  return Uint8Array.from(new Uint8Array(pfx.toSchema().toBER(false)));
+}
 
 describe("certificate inputs and PKCS#12 identities", () => {
   let identity: SyntheticIdentity;
@@ -330,6 +337,68 @@ describe("certificate inputs and PKCS#12 identities", () => {
     expect(
       Buffer.from(material.signerCertificate.serialNumber.valueBlock.valueHexView).toString("hex")
     ).toBe("02");
+  });
+
+  it("accepts plaintext key bags and SHA-256 PKCS#12 MACs", () => {
+    const plaintextKeyBag = createPkcs12(
+      identity.leafKeys.privateKey,
+      [identity.leafCertificate, identity.rootCertificate],
+      "passphrase",
+      { keyEncryption: "none", macAlgorithm: "sha256" }
+    );
+    const material = loadSigningMaterial(
+      { identity: { data: plaintextKeyBag, passphrase: "passphrase", type: "pkcs12" } },
+      resolveLimits(undefined)
+    );
+    expect(material.signerCertificate.serialNumber.valueBlock.valueDec).toBe(2);
+  });
+
+  it("rejects PKCS#12 identities without a MAC or with encrypted safe contents", () => {
+    const withoutMac = createPkcs12(
+      identity.leafKeys.privateKey,
+      [identity.leafCertificate],
+      "passphrase",
+      { includeMac: false }
+    );
+    expect(() =>
+      loadSigningMaterial(
+        { identity: { data: withoutMac, passphrase: "passphrase", type: "pkcs12" } },
+        resolveLimits(undefined)
+      )
+    ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+
+    const encryptedSafeContents = createPkcs12(
+      identity.leafKeys.privateKey,
+      [identity.leafCertificate],
+      "passphrase",
+      { certificateEncryption: "pbe-sha1-3des" }
+    );
+    expect(() =>
+      loadSigningMaterial(
+        {
+          identity: { data: encryptedSafeContents, passphrase: "passphrase", type: "pkcs12" },
+        },
+        resolveLimits(undefined)
+      )
+    ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+  });
+
+  it("rejects an authenticated safe with an unsupported content type", () => {
+    const unsupported = rewritePfx(pkcs12, (pfx) => {
+      pfx.authSafe.contentType = "1.2.840.113549.1.7.6";
+    });
+    expect(() =>
+      loadSigningMaterial(
+        {
+          identity: {
+            data: unsupported,
+            passphrase: "correct horse battery staple",
+            type: "pkcs12",
+          },
+        },
+        resolveLimits(undefined)
+      )
+    ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
   });
 
   it("rejects malformed and oversized certificates in an explicit chain", () => {

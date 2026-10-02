@@ -13,8 +13,8 @@ import {
   AuthenticatedSafe,
   Certificate,
   CertBag,
-  KeyBag,
   PKCS8ShroudedKeyBag,
+  PrivateKeyInfo,
   PFX,
   SafeContents,
 } from "pkijs";
@@ -300,7 +300,7 @@ function parsePkcs12(
             new Uint8Array(bag.bagValue.certValue.getValue())
           );
           certificates.push(parseCertificateDer(certificateBytes, limits));
-        } else if (bag.bagId === KEY_BAG_OID && bag.bagValue instanceof KeyBag) {
+        } else if (bag.bagId === KEY_BAG_OID && bag.bagValue instanceof PrivateKeyInfo) {
           privateKeys.push(
             createPrivateKey({
               key: Buffer.from(bag.bagValue.toSchema().toBER(false)),

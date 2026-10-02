@@ -97,5 +97,10 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.70.1",
     "vitest": "4.1.11"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.12",
+    "fast-uri": "3.1.8",
+    "markdown-it": "14.3.2"
   }
 }
