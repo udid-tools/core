@@ -43,6 +43,11 @@ export interface SigningMaterial {
   readonly warnings: readonly UdidToolsWarning[];
 }
 
+interface ParsedPkcs12 {
+  readonly certificates: Certificate[];
+  readonly privateKeys: KeyObject[];
+}
+
 function asErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "";
 }
@@ -234,13 +239,7 @@ function verifyPkcs12Mac(pfx: PFX, content: Uint8Array, passphrase: string): voi
   }
 }
 
-function parsePkcs12(
-  signing: SigningOptions,
-  limits: ResourceLimits
-): {
-  readonly certificates: Certificate[];
-  readonly privateKeys: KeyObject[];
-} {
+function parsePkcs12(signing: SigningOptions, limits: ResourceLimits): ParsedPkcs12 {
   const identity = getRuntimeSigningIdentity(signing);
   if (identity?.data === undefined) {
     throw new UdidToolsError(
@@ -470,6 +469,7 @@ export function loadSigningMaterial(
     );
   }
   const match = matches[0];
+  /* c8 ignore next 3 -- matches is non-empty after the guard above. */
   if (match === undefined) {
     throw new UdidToolsError("INTERNAL_ERROR", "The signing identity could not be selected.");
   }

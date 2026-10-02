@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   createHash,
+  createPrivateKey,
   createPublicKey,
   createSign,
   generateKeyPairSync,
@@ -277,6 +278,46 @@ export function createPkcs12(
     }
     execFileSync("openssl", args, { stdio: "ignore" });
     return Uint8Array.from(readFileSync(outputPath));
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+export function createEcPkcs12(passphrase: string): Uint8Array {
+  const directory = mkdtempSync(join(tmpdir(), "udid-tools-ec-p12-"));
+  try {
+    const keyPath = join(directory, "key.pem");
+    const certificatePath = join(directory, "certificate.pem");
+    execFileSync(
+      "openssl",
+      ["ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", keyPath],
+      {
+        stdio: "ignore",
+      }
+    );
+    execFileSync(
+      "openssl",
+      [
+        "req",
+        "-new",
+        "-x509",
+        "-key",
+        keyPath,
+        "-out",
+        certificatePath,
+        "-days",
+        "365",
+        "-sha256",
+        "-subj",
+        "/CN=UDID Tools Synthetic EC Signer",
+      ],
+      { stdio: "ignore" }
+    );
+    return createPkcs12(
+      createPrivateKey(readFileSync(keyPath)),
+      [certificateFromPem(readFileSync(certificatePath, "utf8"))],
+      passphrase
+    );
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

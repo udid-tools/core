@@ -8,6 +8,7 @@ import { resolveLimits } from "../../src/limits.js";
 import type { SigningOptions } from "../../src/types.js";
 import {
   certificatePem,
+  createEcPkcs12,
   createPkcs12,
   createSyntheticIdentity,
   type SyntheticIdentity,
@@ -275,6 +276,14 @@ describe("certificate inputs and PKCS#12 identities", () => {
         limits
       )
     ).toThrow(expect.objectContaining({ code: "INVALID_PRIVATE_KEY" }));
+
+    const ecPkcs12 = createEcPkcs12("passphrase");
+    expect(() =>
+      loadSigningMaterial(
+        { identity: { data: ecPkcs12, passphrase: "passphrase", type: "pkcs12" } },
+        limits
+      )
+    ).toThrow(expect.objectContaining({ code: "UNSUPPORTED_ALGORITHM" }));
   });
 
   it("rejects ambiguous identities and expired signing certificates", () => {
