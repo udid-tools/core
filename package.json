@@ -77,7 +77,6 @@
     "asn1js": "3.0.10",
     "fast-xml-parser": "5.11.1",
     "fast-xml-validator": "1.4.2",
-    "node-forge": "1.4.0",
     "pkijs": "3.4.1"
   },
   "devDependencies": {
@@ -85,7 +84,6 @@
     "@astrojs/starlight": "0.42.4",
     "@eslint/js": "10.0.1",
     "@types/node": "24.13.6",
-    "@types/node-forge": "1.3.14",
     "@vitest/coverage-v8": "4.1.11",
     "astro": "7.3.5",
     "cross-env": "10.1.0",

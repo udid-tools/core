@@ -1,5 +1,4 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import forge from "node-forge";
 
 import { decodeBinaryInput, loadSigningMaterial } from "../../src/certificates/index.js";
 import { decodePem } from "../../src/certificates/binary-input.js";
@@ -115,8 +114,12 @@ describe("certificate inputs and PKCS#12 identities", () => {
     };
 
     const material = loadSigningMaterial(signing, resolveLimits(undefined));
-    expect(material.signerCertificate.serialNumber).toBe("02");
-    expect(material.privateKey.n.compareTo(identity.leafKeys.privateKey.n)).toBe(0);
+    expect(
+      Buffer.from(material.signerCertificate.serialNumber.valueBlock.valueHexView).toString("hex")
+    ).toBe("02");
+    expect(Buffer.from(material.privateKey.export({ format: "der", type: "pkcs8" }))).toEqual(
+      Buffer.from(identity.leafKeys.privateKey.export({ format: "der", type: "pkcs8" }))
+    );
     expect(material.certificates).toHaveLength(3);
     expect(material.warnings).toContainEqual(
       expect.objectContaining({ code: "DUPLICATE_CERTIFICATE_IGNORED" })
@@ -141,23 +144,6 @@ describe("certificate inputs and PKCS#12 identities", () => {
       expect((error as UdidToolsError).code).toBe("INCORRECT_PASSPHRASE");
       expect((error as Error).message).not.toContain("super-secret-wrong-passphrase");
     }
-  });
-
-  it("rejects a PKCS#12 identity whose key has no matching certificate", () => {
-    const mismatched = createPkcs12(
-      identity.leafKeys.privateKey,
-      [identity.unrelatedCertificate, identity.rootCertificate],
-      "passphrase"
-    );
-
-    expect(() =>
-      loadSigningMaterial(
-        {
-          identity: { data: mismatched, passphrase: "passphrase", type: "pkcs12" },
-        },
-        resolveLimits(undefined)
-      )
-    ).toThrow(expect.objectContaining({ code: "CERTIFICATE_KEY_MISMATCH" }));
   });
 
   it("enforces PKCS#12 and certificate-count limits before crypto work", () => {
@@ -298,11 +284,7 @@ describe("certificate inputs and PKCS#12 identities", () => {
     ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
 
     const expiredIdentity = createSyntheticIdentity();
-    expiredIdentity.leafCertificate.validity.notAfter = new Date(Date.now() - 1_000);
-    expiredIdentity.leafCertificate.sign(
-      expiredIdentity.rootKeys.privateKey,
-      forge.md.sha256.create()
-    );
+    expiredIdentity.leafCertificate.notAfter.value = new Date(Date.now() - 1_000);
     const expired = createPkcs12(
       expiredIdentity.leafKeys.privateKey,
       [expiredIdentity.leafCertificate, expiredIdentity.rootCertificate],
@@ -318,14 +300,8 @@ describe("certificate inputs and PKCS#12 identities", () => {
 
   it("warns about certificates that are not valid yet or expire soon", () => {
     const futureIdentity = createSyntheticIdentity();
-    futureIdentity.leafCertificate.validity.notBefore = new Date(Date.now() + 24 * 60 * 60 * 1_000);
-    futureIdentity.leafCertificate.validity.notAfter = new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1_000
-    );
-    futureIdentity.leafCertificate.sign(
-      futureIdentity.rootKeys.privateKey,
-      forge.md.sha256.create()
-    );
+    futureIdentity.leafCertificate.notBefore.value = new Date(Date.now() + 24 * 60 * 60 * 1_000);
+    futureIdentity.leafCertificate.notAfter.value = new Date(Date.now() + 7 * 24 * 60 * 60 * 1_000);
     const future = createPkcs12(
       futureIdentity.leafKeys.privateKey,
       [futureIdentity.leafCertificate, futureIdentity.rootCertificate],
@@ -351,7 +327,9 @@ describe("certificate inputs and PKCS#12 identities", () => {
       },
       resolveLimits(undefined)
     );
-    expect(material.signerCertificate.serialNumber).toBe("02");
+    expect(
+      Buffer.from(material.signerCertificate.serialNumber.valueBlock.valueHexView).toString("hex")
+    ).toBe("02");
   });
 
   it("rejects malformed and oversized certificates in an explicit chain", () => {

@@ -409,9 +409,8 @@ export async function inspectAndVerifyCms(
 
   let signedData: SignedData;
   try {
-    // node-forge provides a separate strict DER parser with a per-call depth
-    // limit. Running it first rejects trailing garbage and avoids exposing the
-    // PKI.js/asn1js parser to obviously pathological nesting.
+    // Run the bounded ASN.1 preflight before PKI.js sees the input so trailing
+    // bytes and pathological nesting are rejected consistently.
     preflightDer(input, limits);
     const contentInfo = new ContentInfo({ schema: parseAsn1(input, limits) });
     if (contentInfo.contentType !== CMS_SIGNED_DATA_OID) {

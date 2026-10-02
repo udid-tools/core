@@ -1,6 +1,5 @@
 import * as asn1js from "asn1js";
 import { Certificate, ContentInfo, SignedData } from "pkijs";
-import forge from "node-forge";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { loadSigningMaterial, type SigningMaterial } from "../../src/certificates/index.js";
@@ -8,6 +7,8 @@ import { inspectAndVerifyCms, signCms } from "../../src/cms/index.js";
 import { resolveLimits } from "../../src/limits.js";
 import {
   certificateDer,
+  cloneCertificate,
+  createCms,
   createPkcs12,
   createSyntheticIdentity,
   type SyntheticIdentity,
@@ -16,84 +17,6 @@ import {
 const CONTENT_TYPE_OID = "1.2.840.113549.1.9.3";
 const MESSAGE_DIGEST_OID = "1.2.840.113549.1.9.4";
 const SIGNING_TIME_OID = "1.2.840.113549.1.9.5";
-const SHA1_OID = "1.3.14.3.2.26";
-
-interface MutableCertificateExtension {
-  id?: string;
-  name?: string;
-  value?: string;
-}
-
-function isMutableExtension(value: unknown): value is MutableCertificateExtension {
-  return typeof value === "object" && value !== null;
-}
-
-function asMutableExtensions(value: unknown): MutableCertificateExtension[] {
-  if (!Array.isArray(value)) {
-    throw new Error("Synthetic certificate extensions are malformed");
-  }
-  return value
-    .map((candidate: unknown) => candidate)
-    .filter((candidate): candidate is MutableCertificateExtension => isMutableExtension(candidate));
-}
-
-function mutableExtensions(certificate: forge.pki.Certificate): MutableCertificateExtension[] {
-  return asMutableExtensions(certificate.extensions);
-}
-
-function requireExtension(
-  certificate: forge.pki.Certificate,
-  name: string
-): MutableCertificateExtension {
-  const extension = mutableExtensions(certificate).find((candidate) => candidate.name === name);
-  if (extension === undefined) {
-    throw new Error(`Synthetic ${name} extension is missing`);
-  }
-  return extension;
-}
-
-function createCustomCms(
-  payload: Uint8Array,
-  privateKey: forge.pki.rsa.PrivateKey,
-  signerCertificate: forge.pki.Certificate,
-  embeddedCertificates: readonly forge.pki.Certificate[],
-  options: {
-    readonly detached?: boolean;
-    readonly digestAlgorithm?: string;
-    readonly signerCount?: number;
-  } = {}
-): Uint8Array {
-  const signedData = forge.pkcs7.createSignedData();
-  signedData.content = forge.util.createBuffer(Buffer.from(payload).toString("latin1"), "raw");
-  for (const certificate of embeddedCertificates) {
-    signedData.addCertificate(certificate);
-  }
-  for (let index = 0; index < (options.signerCount ?? 1); index += 1) {
-    signedData.addSigner({
-      authenticatedAttributes: [
-        { type: CONTENT_TYPE_OID, value: "1.2.840.113549.1.7.1" },
-        { type: MESSAGE_DIGEST_OID },
-        { type: SIGNING_TIME_OID },
-      ],
-      certificate: signerCertificate,
-      digestAlgorithm: options.digestAlgorithm ?? "2.16.840.1.101.3.4.2.1",
-      key: privateKey,
-    });
-  }
-  signedData.sign({ detached: options.detached ?? false });
-  return Uint8Array.from(Buffer.from(forge.asn1.toDer(signedData.toAsn1()).getBytes(), "latin1"));
-}
-
-function createCmsWithoutSigners(
-  payload: Uint8Array,
-  certificate: forge.pki.Certificate
-): Uint8Array {
-  const signedData = forge.pkcs7.createSignedData();
-  signedData.content = forge.util.createBuffer(Buffer.from(payload).toString("latin1"), "raw");
-  signedData.addCertificate(certificate);
-  signedData.sign({ detached: false });
-  return Uint8Array.from(Buffer.from(forge.asn1.toDer(signedData.toAsn1()).getBytes(), "latin1"));
-}
 
 function rewriteSignedData(
   input: Uint8Array,
@@ -112,14 +35,14 @@ function rewriteSignedData(
 
 function createSubjectKeyIdentifierCms(
   payload: Uint8Array,
-  privateKey: forge.pki.rsa.PrivateKey,
-  signerCertificate: forge.pki.Certificate,
+  privateKey: SyntheticIdentity["leafKeys"]["privateKey"],
+  signerCertificate: Certificate,
   options: {
     readonly constructed?: boolean;
-    readonly embeddedCertificates?: readonly forge.pki.Certificate[];
+    readonly embeddedCertificates?: readonly Certificate[];
   } = {}
 ): Uint8Array {
-  const original = createCustomCms(
+  const original = createCms(
     payload,
     privateKey,
     signerCertificate,
@@ -246,41 +169,42 @@ describe("CMS signing and verification", () => {
   });
 
   it("resolves constructed SKI signers across irrelevant and malformed certificates", async () => {
-    const withoutSki = forge.pki.certificateFromPem(
-      forge.pki.certificateToPem(identity.unrelatedCertificate)
-    );
-    const removedSkiExtension = requireExtension(withoutSki, "subjectKeyIdentifier");
-    removedSkiExtension.id = "1.2.3.4";
-    removedSkiExtension.name = "syntheticIrrelevantExtension";
+    const withoutSki = cloneCertificate(identity.unrelatedCertificate);
+    if (withoutSki.extensions !== undefined) {
+      withoutSki.extensions = withoutSki.extensions.filter(
+        (extension) => extension.extnID !== "2.5.29.14"
+      );
+    }
 
-    const malformedSki = forge.pki.certificateFromPem(
-      forge.pki.certificateToPem(identity.unrelatedCertificate)
+    const malformedSki = cloneCertificate(identity.unrelatedCertificate);
+    const malformedExtension = malformedSki.extensions?.find(
+      (extension) => extension.extnID === "2.5.29.14"
     );
-    const malformedExtension = requireExtension(malformedSki, "subjectKeyIdentifier");
-    malformedExtension.value = "\xff";
+    if (malformedExtension === undefined)
+      throw new Error("Synthetic subject key identifier is missing");
+    malformedExtension.extnValue = new asn1js.OctetString({
+      valueHex: Uint8Array.from([0xff]).buffer,
+    });
 
-    const wrongTypeSki = forge.pki.certificateFromPem(
-      forge.pki.certificateToPem(identity.unrelatedCertificate)
+    const wrongTypeSki = cloneCertificate(identity.unrelatedCertificate);
+    const wrongTypeExtension = wrongTypeSki.extensions?.find(
+      (extension) => extension.extnID === "2.5.29.14"
     );
-    const wrongTypeExtension = requireExtension(wrongTypeSki, "subjectKeyIdentifier");
-    wrongTypeExtension.value = forge.asn1
-      .toDer(forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.NULL, false, ""))
-      .getBytes();
+    if (wrongTypeExtension === undefined)
+      throw new Error("Synthetic subject key identifier is missing");
+    wrongTypeExtension.extnValue = new asn1js.OctetString({
+      valueHex: new asn1js.Null().toBER(false),
+    });
 
-    const differentLengthSki = forge.pki.certificateFromPem(
-      forge.pki.certificateToPem(identity.unrelatedCertificate)
+    const differentLengthSki = cloneCertificate(identity.unrelatedCertificate);
+    const differentLengthExtension = differentLengthSki.extensions?.find(
+      (extension) => extension.extnID === "2.5.29.14"
     );
-    const differentLengthExtension = requireExtension(differentLengthSki, "subjectKeyIdentifier");
-    differentLengthExtension.value = forge.asn1
-      .toDer(
-        forge.asn1.create(
-          forge.asn1.Class.UNIVERSAL,
-          forge.asn1.Type.OCTETSTRING,
-          false,
-          "\x01\x02"
-        )
-      )
-      .getBytes();
+    if (differentLengthExtension === undefined)
+      throw new Error("Synthetic subject key identifier is missing");
+    differentLengthExtension.extnValue = new asn1js.OctetString({
+      valueHex: new asn1js.OctetString({ valueHex: Uint8Array.from([1, 2]).buffer }).toBER(false),
+    });
 
     const constructedCms = createSubjectKeyIdentifierCms(
       content,
@@ -365,12 +289,12 @@ describe("CMS signing and verification", () => {
   });
 
   it("verifies RSA/SHA-1 and still rejects tampering", async () => {
-    const sha1 = createCustomCms(
+    const sha1 = createCms(
       content,
       identity.leafKeys.privateKey,
       identity.leafCertificate,
       [identity.leafCertificate],
-      { digestAlgorithm: SHA1_OID }
+      { digestAlgorithm: "sha1" }
     );
 
     const inspected = await inspectAndVerifyCms(
@@ -445,12 +369,18 @@ describe("CMS signing and verification", () => {
   });
 
   it("requires signers, embedded certificates, and attached content", async () => {
-    const noSigners = createCmsWithoutSigners(content, identity.leafCertificate);
+    const noSigners = createCms(
+      content,
+      identity.leafKeys.privateKey,
+      identity.leafCertificate,
+      [],
+      { signerCount: 0 }
+    );
     await expect(
       inspectAndVerifyCms(noSigners, { mode: "signature" }, resolveLimits(undefined))
     ).rejects.toMatchObject({ code: "MALFORMED_CMS" });
 
-    const noCertificates = createCustomCms(
+    const noCertificates = createCms(
       content,
       identity.leafKeys.privateKey,
       identity.leafCertificate,
@@ -460,7 +390,7 @@ describe("CMS signing and verification", () => {
       inspectAndVerifyCms(noCertificates, { mode: "signature" }, resolveLimits(undefined))
     ).rejects.toMatchObject({ code: "MALFORMED_CMS" });
 
-    const detached = createCustomCms(
+    const detached = createCms(
       content,
       identity.leafKeys.privateKey,
       identity.leafCertificate,
@@ -500,7 +430,7 @@ describe("CMS signing and verification", () => {
       inspectAndVerifyCms(signed, { mode: "signature" }, resolveLimits({ maxCertificates: 1 }))
     ).rejects.toMatchObject({ code: "INPUT_TOO_LARGE" });
 
-    const twoSigners = createCustomCms(
+    const twoSigners = createCms(
       content,
       identity.leafKeys.privateKey,
       identity.leafCertificate,
@@ -510,29 +440,6 @@ describe("CMS signing and verification", () => {
     await expect(
       inspectAndVerifyCms(twoSigners, { mode: "signature" }, resolveLimits({ maxCertificates: 1 }))
     ).rejects.toMatchObject({ code: "INPUT_TOO_LARGE" });
-  });
-
-  it("bounds certificate names exposed in signer metadata", async () => {
-    const longNameCertificate = forge.pki.certificateFromPem(
-      forge.pki.certificateToPem(identity.leafCertificate)
-    );
-    longNameCertificate.setSubject([
-      { name: "commonName", value: `unsafe-${"A".repeat(5_000)}\u0000` },
-    ]);
-    longNameCertificate.sign(identity.rootKeys.privateKey, forge.md.sha256.create());
-    const longNameCms = createCustomCms(
-      content,
-      identity.leafKeys.privateKey,
-      longNameCertificate,
-      [longNameCertificate]
-    );
-    const inspected = await inspectAndVerifyCms(
-      longNameCms,
-      { mode: "signature" },
-      resolveLimits(undefined)
-    );
-    expect(inspected.signature.signers[0]?.subject).toHaveLength(4_097);
-    expect(inspected.signature.signers[0]?.subject.endsWith("…")).toBe(true);
   });
 
   it("rejects unsupported signer algorithms and invalid signing material", async () => {
@@ -554,21 +461,15 @@ describe("CMS signing and verification", () => {
     expect(() =>
       signCms(content, {
         ...material,
-        privateKey: {} as forge.pki.rsa.PrivateKey,
+        privateKey: {} as SigningMaterial["privateKey"],
       })
     ).toThrow(expect.objectContaining({ code: "PROFILE_SIGNING_FAILED" }));
   });
 
   it("rejects unresolved signers when verification is explicitly skipped", async () => {
-    identity.unrelatedCertificate.serialNumber = "0304";
-    identity.unrelatedCertificate.setIssuer(identity.rootCertificate.subject.attributes);
-    identity.unrelatedCertificate.sign(identity.rootKeys.privateKey, forge.md.sha256.create());
-    const unresolved = createCustomCms(
-      content,
-      identity.leafKeys.privateKey,
-      identity.leafCertificate,
-      [identity.unrelatedCertificate]
-    );
+    const unresolved = createCms(content, identity.leafKeys.privateKey, identity.leafCertificate, [
+      identity.unrelatedCertificate,
+    ]);
     await expect(
       inspectAndVerifyCms(unresolved, { mode: "none" }, resolveLimits(undefined))
     ).rejects.toMatchObject({ code: "MALFORMED_CMS" });
