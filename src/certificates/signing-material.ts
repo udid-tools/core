@@ -293,6 +293,7 @@ function parsePkcs12(signing: SigningOptions, limits: ResourceLimits): ParsedPkc
             bag.bagValue.certId !== X509_CERTIFICATE_OID ||
             !(bag.bagValue.certValue instanceof asn1js.OctetString)
           ) {
+            /* c8 ignore next -- PKI.js rejects malformed CertBag values during schema decoding. */
             continue;
           }
           const certificateBytes = Uint8Array.from(
@@ -338,6 +339,7 @@ function keyMatchesCertificate(privateKey: KeyObject, certificate: Certificate):
       Uint8Array.from(new Uint8Array(certificatePublicKey))
     );
   } catch {
+    /* c8 ignore next -- parsed PKI.js certificates have a valid SPKI schema. */
     return false;
   }
 }
