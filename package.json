@@ -75,7 +75,7 @@
   },
   "dependencies": {
     "asn1js": "3.0.10",
-    "fast-xml-parser": "5.11.1",
+    "fast-xml-parser": "5.11.2",
     "fast-xml-validator": "1.4.2",
     "pkijs": "3.4.1"
   },
