@@ -7,6 +7,19 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.9] - 2026-10-08
+
+### Changed
+
+- Updated `fast-xml-parser` to 5.11.2 and refreshed the verified documentation and development
+  toolchain. The public API and supported Profile Service feature set are unchanged from
+  `0.1.0-beta.8`.
+
+### Security
+
+- Updated vulnerable transitive documentation dependencies, including `http-cache-semantics`,
+  `sharp`, `smol-toml`, and `source-map-js`, to patched releases.
+
 ## [0.1.0-beta.8] - 2026-10-03
 
 ### Changed
@@ -108,7 +121,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.8...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.9...HEAD
+[0.1.0-beta.9]: https://github.com/udid-tools/core/compare/v0.1.0-beta.8...v0.1.0-beta.9
 [0.1.0-beta.8]: https://github.com/udid-tools/core/compare/v0.1.0-beta.7...v0.1.0-beta.8
 [0.1.0-beta.7]: https://github.com/udid-tools/core/compare/v0.1.0-beta.6...v0.1.0-beta.7
 [0.1.0-beta.6]: https://github.com/udid-tools/core/compare/v0.1.0-beta.5...v0.1.0-beta.6
