@@ -7,6 +7,15 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.10] - 2026-10-17
+
+### Changed
+
+- Refreshed the verified documentation and development toolchain. The public API, runtime
+  dependencies, and supported Profile Service feature set are unchanged from `0.1.0-beta.9`.
+- Updated pinned GitHub Actions used by CI, security analysis, release publishing, Pages, and
+  OpenSSF Scorecard workflows.
+
 ## [0.1.0-beta.9] - 2026-10-08
 
 ### Changed
@@ -121,7 +130,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.9...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.10...HEAD
+[0.1.0-beta.10]: https://github.com/udid-tools/core/compare/v0.1.0-beta.9...v0.1.0-beta.10
 [0.1.0-beta.9]: https://github.com/udid-tools/core/compare/v0.1.0-beta.8...v0.1.0-beta.9
 [0.1.0-beta.8]: https://github.com/udid-tools/core/compare/v0.1.0-beta.7...v0.1.0-beta.8
 [0.1.0-beta.7]: https://github.com/udid-tools/core/compare/v0.1.0-beta.6...v0.1.0-beta.7
