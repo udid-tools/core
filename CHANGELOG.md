@@ -7,6 +7,14 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.11] - 2026-10-17
+
+### Security
+
+- Overrode the development-only `postcss-selector-parser` dependency with patched version 7.1.6,
+  resolving GHSA-rj75-hqrm-r3gf in the documentation toolchain. Runtime dependencies and the
+  public API are unchanged from `0.1.0-beta.10`.
+
 ## [0.1.0-beta.10] - 2026-10-17
 
 ### Changed
@@ -130,7 +138,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.10...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.11...HEAD
+[0.1.0-beta.11]: https://github.com/udid-tools/core/compare/v0.1.0-beta.10...v0.1.0-beta.11
 [0.1.0-beta.10]: https://github.com/udid-tools/core/compare/v0.1.0-beta.9...v0.1.0-beta.10
 [0.1.0-beta.9]: https://github.com/udid-tools/core/compare/v0.1.0-beta.8...v0.1.0-beta.9
 [0.1.0-beta.8]: https://github.com/udid-tools/core/compare/v0.1.0-beta.7...v0.1.0-beta.8

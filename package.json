@@ -1,6 +1,6 @@
 {
   "name": "@udid-tools/core",
-  "version": "0.1.0-beta.10",
+  "version": "0.1.0-beta.11",
   "description": "Framework-agnostic TypeScript SDK for Apple Profile Service profiles, CMS signing, verification, and device response parsing.",
   "keywords": [
     "apple",
@@ -101,6 +101,9 @@
   "overrides": {
     "brace-expansion": "5.0.12",
     "fast-uri": "3.1.8",
-    "markdown-it": "14.3.2"
+    "markdown-it": "14.3.2",
+    "postcss-nested@6.2.0": {
+      "postcss-selector-parser": "7.1.6"
+    }
   }
 }
