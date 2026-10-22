@@ -592,7 +592,7 @@ describe("certificate inputs and PKCS#12 identities", () => {
     }
   );
 
-  it.each(["pbe-sha1-3des", "aes-128-cbc", "aes-192-cbc", "aes-256-cbc"] as const)(
+  it.each(["pbe-sha1-2des", "pbe-sha1-3des", "aes-128-cbc", "aes-192-cbc", "aes-256-cbc"] as const)(
     "accepts PKCS#12 identities with %s-encrypted certificate safe contents",
     (certificateEncryption) => {
       const passphrase = "passphrase";
@@ -627,6 +627,11 @@ describe("certificate inputs and PKCS#12 identities", () => {
       (encryptedData) => {
         encryptedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmParams =
           new asn1js.Null();
+      },
+      (encryptedData) => {
+        rewritePbes2Parameters(encryptedData, (pbes2) => {
+          pbes2.encryptionScheme.algorithmParams = new asn1js.Null();
+        });
       },
       (encryptedData) => {
         rewritePbes2Parameters(encryptedData, (pbes2) => {
@@ -678,7 +683,7 @@ describe("certificate inputs and PKCS#12 identities", () => {
     }
   });
 
-  it.each(["pbe-sha1-3des", "aes-128-cbc", "aes-192-cbc", "aes-256-cbc"] as const)(
+  it.each(["pbe-sha1-2des", "pbe-sha1-3des", "aes-128-cbc", "aes-192-cbc", "aes-256-cbc"] as const)(
     "accepts PKCS#12 identities with %s-encrypted private-key bags",
     (keyEncryption) => {
       const passphrase = "passphrase";
@@ -697,6 +702,37 @@ describe("certificate inputs and PKCS#12 identities", () => {
       expect(material.signerCertificate.serialNumber.valueBlock.valueDec).toBe(2);
     }
   );
+
+  it("rejects malformed or unsupported authenticated-safe entries", () => {
+    const variants = [
+      (authenticatedSafe: AuthenticatedSafe) => {
+        const entry = authenticatedSafe.safeContents.find(
+          (contentInfo) => contentInfo.contentType === "1.2.840.113549.1.7.1"
+        );
+        if (entry !== undefined) entry.content = new asn1js.Null();
+      },
+      (authenticatedSafe: AuthenticatedSafe) => {
+        const entry = authenticatedSafe.safeContents[0];
+        if (entry !== undefined) entry.contentType = "1.2.3.4";
+      },
+    ];
+
+    for (const mutate of variants) {
+      const invalid = rewriteAuthenticatedSafe(pkcs12, "correct horse battery staple", mutate);
+      expect(() =>
+        loadSigningMaterial(
+          {
+            identity: {
+              data: invalid,
+              passphrase: "correct horse battery staple",
+              type: "pkcs12",
+            },
+          },
+          resolveLimits(undefined)
+        )
+      ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+    }
+  });
 
   it("rejects an authenticated safe with an unsupported content type", () => {
     const unsupported = rewritePfx(pkcs12, "correct horse battery staple", (pfx) => {

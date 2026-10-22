@@ -47,7 +47,8 @@ export interface SyntheticIdentityOptions {
   readonly leafKeyBits?: number;
 }
 
-type Pkcs12Encryption = "none" | "pbe-sha1-3des" | "aes-128-cbc" | "aes-192-cbc" | "aes-256-cbc";
+type Pkcs12Encryption =
+  "none" | "pbe-sha1-2des" | "pbe-sha1-3des" | "aes-128-cbc" | "aes-192-cbc" | "aes-256-cbc";
 
 export interface Pkcs12Options {
   readonly certificateEncryption?: Pkcs12Encryption;
@@ -64,6 +65,8 @@ function opensslPbeName(encryption: Pkcs12Encryption | undefined): string {
       return "AES-192-CBC";
     case "aes-256-cbc":
       return "AES-256-CBC";
+    case "pbe-sha1-2des":
+      return "PBE-SHA1-2DES";
     case "pbe-sha1-3des":
       return "PBE-SHA1-3DES";
     case "none":
