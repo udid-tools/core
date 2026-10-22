@@ -25,6 +25,8 @@ const result = await generateProfile({
 
 `Uint8Array`, strict base64, and PEM certificate inputs are supported. The PKCS#12 container must have exactly one unambiguous RSA private-key/certificate match, and the signing key must be at least 2048 bits. Certificates already present in the container and supplied chain are deduplicated by SHA-256 fingerprint.
 
+PKCS#12 certificate safe contents and private-key bags may be plaintext or password encrypted. The allow-list accepts PKCS#12 SHA-1/3DES PBE and PBES2 with PBKDF2 using HMAC-SHA-1, SHA-256, SHA-384, or SHA-512 plus AES-128-CBC, AES-192-CBC, or AES-256-CBC. Unknown algorithms and malformed parameters fail closed.
+
 The beta output is attached CMS/PKCS#7 SignedData with content-type, message-digest, and signing-time authenticated attributes. The chain is embedded in the output; the package never downloads or invents it.
 
 ## Fail-closed behavior

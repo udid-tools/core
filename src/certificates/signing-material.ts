@@ -4,6 +4,7 @@ import {
   createDecipheriv,
   createPrivateKey,
   createPublicKey,
+  pbkdf2Sync,
   timingSafeEqual,
   type KeyObject,
 } from "node:crypto";
@@ -13,6 +14,9 @@ import {
   AuthenticatedSafe,
   Certificate,
   CertBag,
+  EncryptedData,
+  PBES2Params,
+  PBKDF2Params,
   PKCS8ShroudedKeyBag,
   PrivateKeyInfo,
   PFX,
@@ -33,7 +37,19 @@ const PKCS8_SHROUDED_KEY_BAG_OID = "1.2.840.113549.1.12.10.1.2";
 const CERTIFICATE_BAG_OID = "1.2.840.113549.1.12.10.1.3";
 const X509_CERTIFICATE_OID = "1.2.840.113549.1.9.22.1";
 const PKCS12_TRIPLE_DES_OID = "1.2.840.113549.1.12.1.3";
-const PKCS12_TWO_KEY_TRIPLE_DES_OID = "1.2.840.113549.1.12.1.2";
+const PKCS12_TWO_KEY_TRIPLE_DES_OID = "1.2.840.113549.1.12.1.4";
+const PBES2_OID = "1.2.840.113549.1.5.13";
+const PBKDF2_OID = "1.2.840.113549.1.5.12";
+const HMAC_SHA1_OID = "1.2.840.113549.2.7";
+const HMAC_SHA256_OID = "1.2.840.113549.2.9";
+const HMAC_SHA384_OID = "1.2.840.113549.2.10";
+const HMAC_SHA512_OID = "1.2.840.113549.2.11";
+const AES_128_CBC_OID = "2.16.840.1.101.3.4.1.2";
+const AES_192_CBC_OID = "2.16.840.1.101.3.4.1.22";
+const AES_256_CBC_OID = "2.16.840.1.101.3.4.1.42";
+const DATA_CONTENT_OID = "1.2.840.113549.1.7.1";
+const ENCRYPTED_DATA_CONTENT_OID = "1.2.840.113549.1.7.6";
+const MAXIMUM_PBE_ITERATIONS = 1_000_000;
 const MINIMUM_SIGNING_RSA_BITS = 2_048;
 
 export interface SigningMaterial {
@@ -190,24 +206,156 @@ function parsePbeParameters(value: unknown): {
     throw new Error("Invalid PKCS#12 encryption parameters.");
   }
   const count = iterations.valueBlock.valueDec;
-  if (!Number.isSafeInteger(count) || count < 1) {
+  if (!Number.isSafeInteger(count) || count < 1 || count > MAXIMUM_PBE_ITERATIONS) {
     throw new Error("Invalid PKCS#12 iteration count.");
   }
   return { iterations: count, salt: Uint8Array.from(new Uint8Array(salt.getValue())) };
 }
 
 function decryptLegacyShroudedKey(bag: PKCS8ShroudedKeyBag, passphrase: string): Uint8Array {
-  const algorithm = bag.encryptionAlgorithm.algorithmId;
-  if (algorithm !== PKCS12_TRIPLE_DES_OID && algorithm !== PKCS12_TWO_KEY_TRIPLE_DES_OID) {
-    throw new Error(`Unsupported PKCS#12 key encryption algorithm: ${algorithm}`);
-  }
-  const parameters = parsePbeParameters(bag.encryptionAlgorithm.algorithmParams);
-  const key = pkcs12Kdf(passphrase, parameters.salt, parameters.iterations, 1, 24, "sha1");
-  const iv = pkcs12Kdf(passphrase, parameters.salt, parameters.iterations, 2, 8, "sha1");
-  const decipher = createDecipheriv("des-ede3-cbc", Buffer.from(key), Buffer.from(iv));
-  return Uint8Array.from(
-    Buffer.concat([decipher.update(Buffer.from(bag.encryptedData.getValue())), decipher.final()])
+  return decryptPasswordEncryptedData(
+    bag.encryptionAlgorithm.algorithmId,
+    bag.encryptionAlgorithm.algorithmParams,
+    Uint8Array.from(new Uint8Array(bag.encryptedData.getValue())),
+    passphrase
   );
+}
+
+function decryptLegacyPbe(
+  algorithm: string,
+  algorithmParams: unknown,
+  encrypted: Uint8Array,
+  passphrase: string
+): Uint8Array {
+  const parameters = parsePbeParameters(algorithmParams);
+  const twoKey = algorithm === PKCS12_TWO_KEY_TRIPLE_DES_OID;
+  if (!twoKey && algorithm !== PKCS12_TRIPLE_DES_OID) {
+    throw new Error(`Unsupported PKCS#12 encryption algorithm: ${algorithm}`);
+  }
+  const keyLength = twoKey ? 16 : 24;
+  const key = pkcs12Kdf(passphrase, parameters.salt, parameters.iterations, 1, keyLength, "sha1");
+  const iv = pkcs12Kdf(passphrase, parameters.salt, parameters.iterations, 2, 8, "sha1");
+  const decipher = createDecipheriv(
+    twoKey ? "des-ede-cbc" : "des-ede3-cbc",
+    Buffer.from(key),
+    Buffer.from(iv)
+  );
+  return Uint8Array.from(
+    Buffer.concat([decipher.update(Buffer.from(encrypted)), decipher.final()])
+  );
+}
+
+function decryptPbes2(
+  algorithmParams: unknown,
+  encrypted: Uint8Array,
+  passphrase: string
+): Uint8Array {
+  const parameters = new PBES2Params({ schema: algorithmParams as asn1js.Sequence });
+  if (parameters.keyDerivationFunc.algorithmId !== PBKDF2_OID) {
+    throw new Error(
+      `Unsupported PKCS#12 key derivation function: ${parameters.keyDerivationFunc.algorithmId}`
+    );
+  }
+  const pbkdf2 = new PBKDF2Params({ schema: parameters.keyDerivationFunc.algorithmParams });
+  if (!(pbkdf2.salt instanceof asn1js.OctetString)) {
+    throw new Error("Unsupported PKCS#12 PBKDF2 salt source.");
+  }
+  if (
+    !Number.isSafeInteger(pbkdf2.iterationCount) ||
+    pbkdf2.iterationCount < 1 ||
+    pbkdf2.iterationCount > MAXIMUM_PBE_ITERATIONS
+  ) {
+    throw new Error("Invalid PKCS#12 iteration count.");
+  }
+
+  const prfOid = pbkdf2.prf?.algorithmId ?? HMAC_SHA1_OID;
+  const digest =
+    prfOid === HMAC_SHA1_OID
+      ? "sha1"
+      : prfOid === HMAC_SHA256_OID
+        ? "sha256"
+        : prfOid === HMAC_SHA384_OID
+          ? "sha384"
+          : prfOid === HMAC_SHA512_OID
+            ? "sha512"
+            : null;
+  if (digest === null) {
+    throw new Error(`Unsupported PKCS#12 PBKDF2 PRF: ${prfOid}`);
+  }
+
+  const encryptionOid = parameters.encryptionScheme.algorithmId;
+  const encryption =
+    encryptionOid === AES_128_CBC_OID
+      ? { cipher: "aes-128-cbc", keyLength: 16 }
+      : encryptionOid === AES_192_CBC_OID
+        ? { cipher: "aes-192-cbc", keyLength: 24 }
+        : encryptionOid === AES_256_CBC_OID
+          ? { cipher: "aes-256-cbc", keyLength: 32 }
+          : null;
+  if (encryption === null) {
+    throw new Error(`Unsupported PKCS#12 content encryption algorithm: ${encryptionOid}`);
+  }
+  if (!(parameters.encryptionScheme.algorithmParams instanceof asn1js.OctetString)) {
+    throw new Error("Invalid PKCS#12 encryption IV.");
+  }
+  const iv = Uint8Array.from(
+    new Uint8Array(parameters.encryptionScheme.algorithmParams.getValue())
+  );
+  if (iv.byteLength !== 16) {
+    throw new Error("Invalid PKCS#12 encryption IV.");
+  }
+  if (pbkdf2.keyLength !== undefined && pbkdf2.keyLength !== encryption.keyLength) {
+    throw new Error("Invalid PKCS#12 encryption key length.");
+  }
+  const key = pbkdf2Sync(
+    Buffer.from(passphrase, "utf8"),
+    Buffer.from(pbkdf2.salt.getValue()),
+    pbkdf2.iterationCount,
+    encryption.keyLength,
+    digest
+  );
+  const decipher = createDecipheriv(encryption.cipher, key, Buffer.from(iv));
+  return Uint8Array.from(
+    Buffer.concat([decipher.update(Buffer.from(encrypted)), decipher.final()])
+  );
+}
+
+function decryptPasswordEncryptedData(
+  algorithm: string,
+  algorithmParams: unknown,
+  encrypted: Uint8Array,
+  passphrase: string
+): Uint8Array {
+  if (algorithm === PBES2_OID) {
+    return decryptPbes2(algorithmParams, encrypted, passphrase);
+  }
+  return decryptLegacyPbe(algorithm, algorithmParams, encrypted, passphrase);
+}
+
+function safeContentsBytes(
+  contentInfo: AuthenticatedSafe["safeContents"][number],
+  passphrase: string
+): Uint8Array {
+  if (contentInfo.contentType === DATA_CONTENT_OID) {
+    if (!(contentInfo.content instanceof asn1js.OctetString)) {
+      throw new Error("Invalid PKCS#12 safe contents.");
+    }
+    return Uint8Array.from(new Uint8Array(contentInfo.content.getValue()));
+  }
+  if (contentInfo.contentType === ENCRYPTED_DATA_CONTENT_OID) {
+    const encryptedData = new EncryptedData({ schema: contentInfo.content });
+    if (encryptedData.encryptedContentInfo.contentType !== DATA_CONTENT_OID) {
+      throw new Error("Unsupported PKCS#12 encrypted content type.");
+    }
+    const encrypted = encryptedData.encryptedContentInfo.getEncryptedContent();
+    return decryptPasswordEncryptedData(
+      encryptedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmId,
+      encryptedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmParams,
+      Uint8Array.from(new Uint8Array(encrypted)),
+      passphrase
+    );
+  }
+  throw new Error(`Unsupported PKCS#12 safe content type: ${contentInfo.contentType}`);
 }
 
 function verifyPkcs12Mac(pfx: PFX, content: Uint8Array, passphrase: string): void {
@@ -224,10 +372,14 @@ function verifyPkcs12Mac(pfx: PFX, content: Uint8Array, passphrase: string): voi
   if (hashAlgorithm === null) {
     throw new Error(`Unsupported PKCS#12 MAC algorithm: ${digestOid}`);
   }
+  const iterations = pfx.macData.iterations ?? 1;
+  if (!Number.isSafeInteger(iterations) || iterations < 1 || iterations > MAXIMUM_PBE_ITERATIONS) {
+    throw new Error("Invalid PKCS#12 iteration count.");
+  }
   const key = pkcs12Kdf(
     passphrase,
     Uint8Array.from(new Uint8Array(pfx.macData.macSalt.valueBlock.valueHexView)),
-    pfx.macData.iterations ?? 1,
+    iterations,
     3,
     hashAlgorithm === "sha1" ? 20 : 32,
     hashAlgorithm
@@ -282,15 +434,9 @@ function parsePkcs12(signing: SigningOptions, limits: ResourceLimits): ParsedPkc
     const privateKeys: KeyObject[] = [];
 
     for (const contentInfo of authenticatedSafe.safeContents) {
-      if (
-        contentInfo.contentType !== "1.2.840.113549.1.7.1" ||
-        !(contentInfo.content instanceof asn1js.OctetString)
-      ) {
-        throw new Error("Encrypted PKCS#12 safe contents are not supported.");
-      }
-      const safeContentsBytes = Uint8Array.from(new Uint8Array(contentInfo.content.getValue()));
-      preflightDer(safeContentsBytes, limits);
-      const contents = SafeContents.fromBER(toArrayBuffer(safeContentsBytes));
+      const contentBytes = safeContentsBytes(contentInfo, passphrase);
+      preflightDer(contentBytes, limits);
+      const contents = SafeContents.fromBER(toArrayBuffer(contentBytes));
       for (const bag of contents.safeBags) {
         if (bag.bagId === CERTIFICATE_BAG_OID && bag.bagValue instanceof CertBag) {
           if (

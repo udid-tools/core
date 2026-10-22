@@ -1,7 +1,16 @@
 import { createHash, createHmac } from "node:crypto";
 
 import * as asn1js from "asn1js";
-import { AuthenticatedSafe, CertBag, PFX, SafeContents } from "pkijs";
+import {
+  AlgorithmIdentifier,
+  AuthenticatedSafe,
+  CertBag,
+  EncryptedData,
+  PBES2Params,
+  PBKDF2Params,
+  PFX,
+  SafeContents,
+} from "pkijs";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { decodeBinaryInput, loadSigningMaterial } from "../../src/certificates/index.js";
@@ -104,6 +113,12 @@ function rewritePfx(input: Uint8Array, passphrase: string, mutate: (pfx: PFX) =>
   return Uint8Array.from(new Uint8Array(pfx.toSchema().toBER(false)));
 }
 
+function rewritePfxWithoutMacUpdate(input: Uint8Array, mutate: (pfx: PFX) => void): Uint8Array {
+  const pfx = PFX.fromBER(Uint8Array.from(input).buffer);
+  mutate(pfx);
+  return Uint8Array.from(new Uint8Array(pfx.toSchema().toBER(false)));
+}
+
 function rewriteAuthenticatedSafe(
   input: Uint8Array,
   passphrase: string,
@@ -141,6 +156,36 @@ function rewriteSafeContents(
       });
     }
   });
+}
+
+function rewriteEncryptedSafeContents(
+  input: Uint8Array,
+  passphrase: string,
+  mutate: (encryptedData: EncryptedData) => void
+): Uint8Array {
+  return rewriteAuthenticatedSafe(input, passphrase, (authenticatedSafe) => {
+    const encryptedContent = authenticatedSafe.safeContents.find(
+      (contentInfo) => contentInfo.contentType === "1.2.840.113549.1.7.6"
+    );
+    if (encryptedContent === undefined) {
+      throw new Error("Expected encrypted safe contents.");
+    }
+    const encryptedData = new EncryptedData({ schema: encryptedContent.content });
+    mutate(encryptedData);
+    encryptedContent.content = encryptedData.toSchema();
+  });
+}
+
+function rewritePbes2Parameters(
+  encryptedData: EncryptedData,
+  mutate: (pbes2: PBES2Params, pbkdf2: PBKDF2Params) => void
+): void {
+  const algorithm = encryptedData.encryptedContentInfo.contentEncryptionAlgorithm;
+  const pbes2 = new PBES2Params({ schema: algorithm.algorithmParams });
+  const pbkdf2 = new PBKDF2Params({ schema: pbes2.keyDerivationFunc.algorithmParams });
+  mutate(pbes2, pbkdf2);
+  pbes2.keyDerivationFunc.algorithmParams = pbkdf2.toSchema();
+  algorithm.algorithmParams = pbes2.toSchema();
 }
 
 describe("certificate inputs and PKCS#12 identities", () => {
@@ -511,7 +556,7 @@ describe("certificate inputs and PKCS#12 identities", () => {
     expect(material.signerCertificate.serialNumber.valueBlock.valueDec).toBe(2);
   });
 
-  it("rejects PKCS#12 identities without a MAC or with encrypted safe contents", () => {
+  it("rejects PKCS#12 identities without a MAC", () => {
     const withoutMac = createPkcs12(
       identity.leafKeys.privateKey,
       [identity.leafCertificate],
@@ -524,21 +569,169 @@ describe("certificate inputs and PKCS#12 identities", () => {
         resolveLimits(undefined)
       )
     ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+  });
 
+  it.each([0, 1_000_001])(
+    "rejects PKCS#12 MAC iteration count %i before deriving a key",
+    (iterations) => {
+      const invalidIterations = rewritePfxWithoutMacUpdate(pkcs12, (pfx) => {
+        pfx.macData!.iterations = iterations;
+      });
+      expect(() =>
+        loadSigningMaterial(
+          {
+            identity: {
+              data: invalidIterations,
+              passphrase: "correct horse battery staple",
+              type: "pkcs12",
+            },
+          },
+          resolveLimits(undefined)
+        )
+      ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+    }
+  );
+
+  it.each(["pbe-sha1-2des", "pbe-sha1-3des", "aes-128-cbc", "aes-192-cbc", "aes-256-cbc"] as const)(
+    "accepts PKCS#12 identities with %s-encrypted certificate safe contents",
+    (certificateEncryption) => {
+      const passphrase = "passphrase";
+      const encryptedSafeContents = createPkcs12(
+        identity.leafKeys.privateKey,
+        [identity.leafCertificate],
+        passphrase,
+        { certificateEncryption }
+      );
+      const material = loadSigningMaterial(
+        {
+          identity: { data: encryptedSafeContents, passphrase, type: "pkcs12" },
+        },
+        resolveLimits(undefined)
+      );
+      expect(material.signerCertificate.serialNumber.valueBlock.valueDec).toBe(2);
+    }
+  );
+
+  it("rejects unsafe or unsupported PBES2 encrypted-safe parameters", () => {
+    const passphrase = "passphrase";
     const encryptedSafeContents = createPkcs12(
       identity.leafKeys.privateKey,
       [identity.leafCertificate],
-      "passphrase",
-      { certificateEncryption: "pbe-sha1-3des" }
+      passphrase,
+      { certificateEncryption: "aes-256-cbc" }
     );
-    expect(() =>
-      loadSigningMaterial(
+    const variants: ((encryptedData: EncryptedData) => void)[] = [
+      (encryptedData) => {
+        encryptedData.encryptedContentInfo.contentType = "1.2.3.4";
+      },
+      (encryptedData) => {
+        encryptedData.encryptedContentInfo.contentEncryptionAlgorithm.algorithmParams =
+          new asn1js.Null();
+      },
+      (encryptedData) => {
+        rewritePbes2Parameters(encryptedData, (pbes2) => {
+          pbes2.encryptionScheme.algorithmParams = new asn1js.Null();
+        });
+      },
+      (encryptedData) => {
+        rewritePbes2Parameters(encryptedData, (pbes2) => {
+          pbes2.keyDerivationFunc.algorithmId = "1.2.3.4";
+        });
+      },
+      (encryptedData) => {
+        rewritePbes2Parameters(encryptedData, (_pbes2, pbkdf2) => {
+          pbkdf2.salt = new AlgorithmIdentifier({ algorithmId: "1.2.3.4" }).toSchema();
+        });
+      },
+      (encryptedData) => {
+        rewritePbes2Parameters(encryptedData, (_pbes2, pbkdf2) => {
+          pbkdf2.iterationCount = 1_000_001;
+        });
+      },
+      (encryptedData) => {
+        rewritePbes2Parameters(encryptedData, (_pbes2, pbkdf2) => {
+          pbkdf2.prf = new AlgorithmIdentifier({ algorithmId: "1.2.3.4" });
+        });
+      },
+      (encryptedData) => {
+        rewritePbes2Parameters(encryptedData, (pbes2) => {
+          pbes2.encryptionScheme.algorithmId = "1.2.3.4";
+        });
+      },
+      (encryptedData) => {
+        rewritePbes2Parameters(encryptedData, (pbes2) => {
+          pbes2.encryptionScheme.algorithmParams = new asn1js.OctetString({
+            valueHex: new Uint8Array(8).buffer,
+          });
+        });
+      },
+      (encryptedData) => {
+        rewritePbes2Parameters(encryptedData, (_pbes2, pbkdf2) => {
+          pbkdf2.keyLength = 16;
+        });
+      },
+    ];
+
+    for (const mutate of variants) {
+      const invalid = rewriteEncryptedSafeContents(encryptedSafeContents, passphrase, mutate);
+      expect(() =>
+        loadSigningMaterial(
+          { identity: { data: invalid, passphrase, type: "pkcs12" } },
+          resolveLimits(undefined)
+        )
+      ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+    }
+  });
+
+  it.each(["pbe-sha1-2des", "pbe-sha1-3des", "aes-128-cbc", "aes-192-cbc", "aes-256-cbc"] as const)(
+    "accepts PKCS#12 identities with %s-encrypted private-key bags",
+    (keyEncryption) => {
+      const passphrase = "passphrase";
+      const encryptedKey = createPkcs12(
+        identity.leafKeys.privateKey,
+        [identity.leafCertificate],
+        passphrase,
+        { keyEncryption }
+      );
+      const material = loadSigningMaterial(
         {
-          identity: { data: encryptedSafeContents, passphrase: "passphrase", type: "pkcs12" },
+          identity: { data: encryptedKey, passphrase, type: "pkcs12" },
         },
         resolveLimits(undefined)
-      )
-    ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+      );
+      expect(material.signerCertificate.serialNumber.valueBlock.valueDec).toBe(2);
+    }
+  );
+
+  it("rejects malformed or unsupported authenticated-safe entries", () => {
+    const variants = [
+      (authenticatedSafe: AuthenticatedSafe) => {
+        const entry = authenticatedSafe.safeContents.find(
+          (contentInfo) => contentInfo.contentType === "1.2.840.113549.1.7.1"
+        );
+        if (entry !== undefined) entry.content = new asn1js.Null();
+      },
+      (authenticatedSafe: AuthenticatedSafe) => {
+        const entry = authenticatedSafe.safeContents[0];
+        if (entry !== undefined) entry.contentType = "1.2.3.4";
+      },
+    ];
+
+    for (const mutate of variants) {
+      const invalid = rewriteAuthenticatedSafe(pkcs12, "correct horse battery staple", mutate);
+      expect(() =>
+        loadSigningMaterial(
+          {
+            identity: {
+              data: invalid,
+              passphrase: "correct horse battery staple",
+              type: "pkcs12",
+            },
+          },
+          resolveLimits(undefined)
+        )
+      ).toThrow(expect.objectContaining({ code: "INVALID_PKCS12" }));
+    }
   });
 
   it("rejects an authenticated safe with an unsupported content type", () => {
@@ -625,6 +818,16 @@ describe("certificate inputs and PKCS#12 identities", () => {
           value: [
             new asn1js.OctetString({ valueHex: new Uint8Array([1]).buffer }),
             new asn1js.Integer({ value: 0 }),
+          ],
+        });
+      },
+      (bag: { bagValue: unknown }) => {
+        (
+          bag.bagValue as { encryptionAlgorithm: { algorithmParams: unknown } }
+        ).encryptionAlgorithm.algorithmParams = new asn1js.Sequence({
+          value: [
+            new asn1js.OctetString({ valueHex: new Uint8Array([1]).buffer }),
+            new asn1js.Integer({ value: 1_000_001 }),
           ],
         });
       },

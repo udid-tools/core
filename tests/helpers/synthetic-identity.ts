@@ -47,11 +47,33 @@ export interface SyntheticIdentityOptions {
   readonly leafKeyBits?: number;
 }
 
+type Pkcs12Encryption =
+  "none" | "pbe-sha1-2des" | "pbe-sha1-3des" | "aes-128-cbc" | "aes-192-cbc" | "aes-256-cbc";
+
 export interface Pkcs12Options {
-  readonly certificateEncryption?: "none" | "pbe-sha1-3des";
+  readonly certificateEncryption?: Pkcs12Encryption;
   readonly includeMac?: boolean;
-  readonly keyEncryption?: "none" | "pbe-sha1-3des";
+  readonly keyEncryption?: Pkcs12Encryption;
   readonly macAlgorithm?: "sha1" | "sha256";
+}
+
+function opensslPbeName(encryption: Pkcs12Encryption | undefined): string {
+  switch (encryption) {
+    case "aes-128-cbc":
+      return "AES-128-CBC";
+    case "aes-192-cbc":
+      return "AES-192-CBC";
+    case "aes-256-cbc":
+      return "AES-256-CBC";
+    case "pbe-sha1-2des":
+      return "PBE-SHA1-2DES";
+    case "pbe-sha1-3des":
+      return "PBE-SHA1-3DES";
+    case "none":
+      return "NONE";
+    default:
+      return "PBE-SHA1-3DES";
+  }
 }
 
 function keyPem(key: KeyObject): string {
@@ -263,9 +285,9 @@ export function createPkcs12(
       "-passout",
       `file:${passwordPath}`,
       "-keypbe",
-      options.keyEncryption === "none" ? "NONE" : "PBE-SHA1-3DES",
+      opensslPbeName(options.keyEncryption),
       "-certpbe",
-      options.certificateEncryption === "pbe-sha1-3des" ? "PBE-SHA1-3DES" : "NONE",
+      opensslPbeName(options.certificateEncryption ?? "none"),
     ];
     if (options.includeMac === false) args.push("-nomac");
     else args.push("-macalg", options.macAlgorithm ?? "sha1");

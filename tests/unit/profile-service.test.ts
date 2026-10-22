@@ -140,6 +140,34 @@ describe("Profile Service generation", () => {
     });
   });
 
+  it("signs with a PBES2/AES-encrypted PKCS#12 identity", async () => {
+    const identity = createSyntheticIdentity();
+    const pkcs12 = createPkcs12(
+      identity.leafKeys.privateKey,
+      [identity.leafCertificate],
+      "test-passphrase",
+      { certificateEncryption: "aes-256-cbc", keyEncryption: "aes-256-cbc" }
+    );
+    const result = await generateProfile({
+      ...unsignedOptions(),
+      signing: {
+        identity: { data: pkcs12, passphrase: "test-passphrase", type: "pkcs12" },
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    const inspected = await inspectAndVerifyCms(
+      result.value.data,
+      { mode: "signature" },
+      resolveLimits(undefined)
+    );
+    expect(result.value.protection.signed).toBe(true);
+    expect(inspected.signature.valid).toBe(true);
+  });
+
   it("fails closed for incomplete signing instead of silently returning XML", async () => {
     const invalid = {
       ...unsignedOptions(),

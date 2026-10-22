@@ -109,7 +109,7 @@ The default verification mode checks RSA/SHA-1 and RSA/SHA-256 signature integri
 | Unknown request/response fields             | Preserved through typed extensions and `raw`                                       |
 | Unsigned XML generation                     | Supported                                                                          |
 | Signed profile generation                   | Attached CMS/PKCS#7 SignedData                                                     |
-| Signing identity                            | PKCS#12/PFX with RSA private key                                                   |
+| Signing identity                            | PKCS#12/PFX with RSA key; plaintext or supported password encryption               |
 | Minimum signing key                         | RSA 2048 bits                                                                      |
 | Profile signing                             | RSA/SHA-256                                                                        |
 | Response signatures                         | RSA/SHA-1 and RSA/SHA-256                                                          |

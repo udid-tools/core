@@ -12,7 +12,7 @@ description: Exact implemented and deferred surface.
 | Forward compatibility | Top-level/service extensions; lossless response `raw`                                         | Unvalidated reserved-key overrides                         |
 | Plist                 | XML dictionary, array, string, safe integer, real, boolean, date, data                        | Binary plist                                               |
 | Output protection     | Unsigned XML or attached CMS SignedData                                                       | Profile encryption, detached CMS                           |
-| Identity              | PKCS#12/PFX, RSA key/certificate matching, minimum 2048-bit signing key                       | PEM private keys, HSM/KMS providers, ECDSA/EdDSA           |
+| Identity              | PKCS#12/PFX, RSA key/certificate matching, plaintext or supported password encryption         | PEM private keys, HSM/KMS providers, ECDSA/EdDSA           |
 | Profile signing       | SHA-256 with RSA PKCS#1 v1.5                                                                  | SHA-1 generation, SHA-384/512, RSA-PSS                     |
 | Response signatures   | SHA-1 or SHA-256 with RSA PKCS#1 v1.5                                                         | SHA-384/512, RSA-PSS                                       |
 | Chains                | Caller-supplied embedded chain                                                                | Automatic Apple/OS chain discovery/download                |
