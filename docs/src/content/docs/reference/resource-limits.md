@@ -33,3 +33,5 @@ await parseProfileServiceResponse(body, {
 Every override must be a positive safe integer. Limits are per call, have no global state, and are resolved before work begins. Configure an equal or smaller request-body limit at your reverse proxy/framework so large requests are rejected before buffering.
 
 ASN.1/CMS receives byte, depth, content-length, node, signer, and certificate checks. No parser can promise constant memory for every dependency bug; keep dependencies updated, retain outer process/request isolation, and follow the security policy.
+
+PKCS#12 MAC and password-encryption KDFs also have a fixed upper bound of 1,000,000 iterations. This limit is not caller-configurable because it protects key derivation from attacker-controlled CPU exhaustion.

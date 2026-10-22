@@ -7,6 +7,16 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- Accept password-encrypted PKCS#12 certificate safe contents and private-key bags produced with
+  SHA-1/3DES PBE or PBES2 using PBKDF2 and AES-CBC, while preserving fail-closed parsing.
+
+### Security
+
+- Bound PKCS#12 MAC and encryption KDF iteration counts before key derivation, and reject unknown
+  KDF, PRF, cipher, salt-source, IV, and key-length parameters with sanitized errors.
+
 ## [0.1.0-beta.11] - 2026-10-17
 
 ### Security
