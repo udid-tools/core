@@ -7,6 +7,12 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.12] - 2026-10-22
+
+### Changed
+
+- Updated pinned GitHub Actions used by security analysis and OpenSSF Scorecard workflows.
+
 ### Fixed
 
 - Accept password-encrypted PKCS#12 certificate safe contents and private-key bags produced with
@@ -16,6 +22,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 - Bound PKCS#12 MAC and encryption KDF iteration counts before key derivation, and reject unknown
   KDF, PRF, cipher, salt-source, IV, and key-length parameters with sanitized errors.
+- Updated the development-only Vitest and Markdown-it toolchain to patched releases, resolving
+  audit advisories without changing runtime dependencies.
 
 ## [0.1.0-beta.11] - 2026-10-17
 
@@ -148,7 +156,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.11...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.12...HEAD
+[0.1.0-beta.12]: https://github.com/udid-tools/core/compare/v0.1.0-beta.11...v0.1.0-beta.12
 [0.1.0-beta.11]: https://github.com/udid-tools/core/compare/v0.1.0-beta.10...v0.1.0-beta.11
 [0.1.0-beta.10]: https://github.com/udid-tools/core/compare/v0.1.0-beta.9...v0.1.0-beta.10
 [0.1.0-beta.9]: https://github.com/udid-tools/core/compare/v0.1.0-beta.8...v0.1.0-beta.9
