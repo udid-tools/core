@@ -7,6 +7,8 @@ Read the repository’s [contributor guide](https://github.com/udid-tools/core/b
 
 Use the matching issue form. Security vulnerabilities must be reported privately, not through public issues. New caller-configurable algorithms require the dedicated request form and must include motivation, standards/OIDs, key/container formats, test vectors, platform interoperability evidence, threat analysis, and migration impact. Reproducible compatibility defects within the existing Apple Profile Service scope use the bug report form and still require synthetic regression coverage and security review.
 
+Use Node.js 24.19.0 from `.nvmrc` and npm 11.19.0 from `package.json` for repository tooling. The published package remains compatible with Node.js 22.14.0, which CI tests separately.
+
 Local verification:
 
 ```bash
