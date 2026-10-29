@@ -15,6 +15,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { decodeBinaryInput, loadSigningMaterial } from "../../src/certificates/index.js";
 import { decodePem } from "../../src/certificates/binary-input.js";
+import { decryptRc2Cbc } from "../../src/certificates/rc2.js";
 import { UdidToolsError } from "../../src/errors.js";
 import { resolveLimits } from "../../src/limits.js";
 import type { SigningOptions } from "../../src/types.js";
@@ -592,7 +593,15 @@ describe("certificate inputs and PKCS#12 identities", () => {
     }
   );
 
-  it.each(["pbe-sha1-2des", "pbe-sha1-3des", "aes-128-cbc", "aes-192-cbc", "aes-256-cbc"] as const)(
+  it.each([
+    "pbe-sha1-2des",
+    "pbe-sha1-3des",
+    "pbe-sha1-rc2-40",
+    "pbe-sha1-rc2-128",
+    "aes-128-cbc",
+    "aes-192-cbc",
+    "aes-256-cbc",
+  ] as const)(
     "accepts PKCS#12 identities with %s-encrypted certificate safe contents",
     (certificateEncryption) => {
       const passphrase = "passphrase";
@@ -611,6 +620,125 @@ describe("certificate inputs and PKCS#12 identities", () => {
       expect(material.signerCertificate.serialNumber.valueBlock.valueDec).toBe(2);
     }
   );
+
+  it.each(["pbe-sha1-rc2-40", "pbe-sha1-rc2-128"] as const)(
+    "checks MAC integrity and input bounds before decrypting %s safe contents",
+    (certificateEncryption) => {
+      const passphrase = "synthetic-container-passphrase";
+      const encrypted = createPkcs12(
+        identity.leafKeys.privateKey,
+        [identity.leafCertificate],
+        passphrase,
+        {
+          certificateEncryption,
+        }
+      );
+      expect(() =>
+        loadSigningMaterial(
+          {
+            identity: { data: encrypted, passphrase: "wrong-synthetic-passphrase", type: "pkcs12" },
+          },
+          resolveLimits(undefined)
+        )
+      ).toThrow(expect.objectContaining({ code: "INCORRECT_PASSPHRASE" }));
+      expect(() =>
+        loadSigningMaterial(
+          { identity: { data: encrypted, passphrase, type: "pkcs12" } },
+          resolveLimits({ maxInputBytes: encrypted.byteLength - 1 })
+        )
+      ).toThrow(expect.objectContaining({ code: "INPUT_TOO_LARGE" }));
+      const tampered = rewritePfxWithoutMacUpdate(encrypted, (pfx) => {
+        const content = pfx.authSafe.content as asn1js.OctetString;
+        const bytes = new Uint8Array(content.getValue());
+        bytes[bytes.byteLength - 1] = (bytes[bytes.byteLength - 1] ?? 0) ^ 1;
+        pfx.authSafe.content = new asn1js.OctetString({ valueHex: bytes.buffer });
+      });
+      expect(() =>
+        loadSigningMaterial(
+          { identity: { data: tampered, passphrase, type: "pkcs12" } },
+          resolveLimits(undefined)
+        )
+      ).toThrow(expect.objectContaining({ code: "INCORRECT_PASSPHRASE" }));
+    }
+  );
+
+  it("rejects malformed RC2 PBE parameters and padding with sanitized errors", () => {
+    const passphrase = "synthetic-legacy-passphrase";
+    const encrypted = createPkcs12(
+      identity.leafKeys.privateKey,
+      [identity.leafCertificate],
+      passphrase,
+      {
+        certificateEncryption: "pbe-sha1-rc2-40",
+      }
+    );
+    const variants: ((encryptedData: EncryptedData) => void)[] = [
+      (data) => {
+        data.encryptedContentInfo.contentEncryptionAlgorithm.algorithmParams = new asn1js.Null();
+      },
+      ...[0, -1, 1_000_001].map((iterations) => (data: EncryptedData) => {
+        data.encryptedContentInfo.contentEncryptionAlgorithm.algorithmParams = new asn1js.Sequence({
+          value: [
+            new asn1js.OctetString({ valueHex: new Uint8Array(8).buffer }),
+            new asn1js.Integer({ value: iterations }),
+          ],
+        });
+      }),
+      (data) => {
+        data.encryptedContentInfo.contentEncryptionAlgorithm.algorithmParams = new asn1js.Sequence({
+          value: [new asn1js.Null(), new asn1js.Integer({ value: 1 })],
+        });
+      },
+      (data) => {
+        data.encryptedContentInfo.contentEncryptionAlgorithm.algorithmParams = new asn1js.Sequence({
+          value: [new asn1js.OctetString(), new asn1js.Integer({ value: 1 }), new asn1js.Null()],
+        });
+      },
+      ...[0, 7].map((length) => (data: EncryptedData) => {
+        data.encryptedContentInfo.encryptedContent = new asn1js.OctetString({
+          valueHex: new Uint8Array(length).buffer,
+        });
+      }),
+      ...[0, 9, 2].map((invalidPadding) => (data: EncryptedData) => {
+        const params = data.encryptedContentInfo.contentEncryptionAlgorithm
+          .algorithmParams as asn1js.Sequence;
+        const salt = new Uint8Array((params.valueBlock.value[0] as asn1js.OctetString).getValue());
+        const iterations = (params.valueBlock.value[1] as asn1js.Integer).valueBlock.valueDec;
+        const ciphertext = new Uint8Array(data.encryptedContentInfo.getEncryptedContent());
+        const plain = decryptRc2Cbc(
+          ciphertext,
+          pkcs12Kdf(passphrase, salt, iterations, 1, 5, "sha1"),
+          pkcs12Kdf(passphrase, salt, iterations, 2, 8, "sha1"),
+          40
+        );
+        const previousLast = ciphertext.byteLength - 9;
+        ciphertext[previousLast] =
+          ciphertext[previousLast]! ^ plain[plain.byteLength - 1]! ^ invalidPadding;
+        if (invalidPadding === 2) {
+          // Force an inconsistent second padding byte while retaining a valid last byte.
+          ciphertext[previousLast - 1] =
+            ciphertext[previousLast - 1]! ^ plain[plain.byteLength - 2]! ^ 3;
+        }
+        data.encryptedContentInfo.encryptedContent = new asn1js.OctetString({
+          valueHex: ciphertext.buffer,
+        });
+      }),
+    ];
+    for (const mutate of variants) {
+      const invalid = rewriteEncryptedSafeContents(encrypted, passphrase, mutate);
+      expect(() =>
+        loadSigningMaterial(
+          { identity: { data: invalid, passphrase, type: "pkcs12" } },
+          resolveLimits(undefined)
+        )
+      ).toThrow(
+        expect.objectContaining({
+          code: "INVALID_PKCS12",
+          message: "The PKCS#12 identity could not be decoded.",
+        })
+      );
+    }
+  });
 
   it("rejects unsafe or unsupported PBES2 encrypted-safe parameters", () => {
     const passphrase = "passphrase";
@@ -683,25 +811,30 @@ describe("certificate inputs and PKCS#12 identities", () => {
     }
   });
 
-  it.each(["pbe-sha1-2des", "pbe-sha1-3des", "aes-128-cbc", "aes-192-cbc", "aes-256-cbc"] as const)(
-    "accepts PKCS#12 identities with %s-encrypted private-key bags",
-    (keyEncryption) => {
-      const passphrase = "passphrase";
-      const encryptedKey = createPkcs12(
-        identity.leafKeys.privateKey,
-        [identity.leafCertificate],
-        passphrase,
-        { keyEncryption }
-      );
-      const material = loadSigningMaterial(
-        {
-          identity: { data: encryptedKey, passphrase, type: "pkcs12" },
-        },
-        resolveLimits(undefined)
-      );
-      expect(material.signerCertificate.serialNumber.valueBlock.valueDec).toBe(2);
-    }
-  );
+  it.each([
+    "pbe-sha1-2des",
+    "pbe-sha1-3des",
+    "pbe-sha1-rc2-40",
+    "pbe-sha1-rc2-128",
+    "aes-128-cbc",
+    "aes-192-cbc",
+    "aes-256-cbc",
+  ] as const)("accepts PKCS#12 identities with %s-encrypted private-key bags", (keyEncryption) => {
+    const passphrase = "passphrase";
+    const encryptedKey = createPkcs12(
+      identity.leafKeys.privateKey,
+      [identity.leafCertificate],
+      passphrase,
+      { keyEncryption }
+    );
+    const material = loadSigningMaterial(
+      {
+        identity: { data: encryptedKey, passphrase, type: "pkcs12" },
+      },
+      resolveLimits(undefined)
+    );
+    expect(material.signerCertificate.serialNumber.valueBlock.valueDec).toBe(2);
+  });
 
   it("rejects malformed or unsupported authenticated-safe entries", () => {
     const variants = [

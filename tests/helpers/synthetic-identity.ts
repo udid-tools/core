@@ -48,7 +48,14 @@ export interface SyntheticIdentityOptions {
 }
 
 type Pkcs12Encryption =
-  "none" | "pbe-sha1-2des" | "pbe-sha1-3des" | "aes-128-cbc" | "aes-192-cbc" | "aes-256-cbc";
+  | "none"
+  | "pbe-sha1-2des"
+  | "pbe-sha1-3des"
+  | "pbe-sha1-rc2-40"
+  | "pbe-sha1-rc2-128"
+  | "aes-128-cbc"
+  | "aes-192-cbc"
+  | "aes-256-cbc";
 
 export interface Pkcs12Options {
   readonly certificateEncryption?: Pkcs12Encryption;
@@ -69,6 +76,10 @@ function opensslPbeName(encryption: Pkcs12Encryption | undefined): string {
       return "PBE-SHA1-2DES";
     case "pbe-sha1-3des":
       return "PBE-SHA1-3DES";
+    case "pbe-sha1-rc2-40":
+      return "PBE-SHA1-RC2-40";
+    case "pbe-sha1-rc2-128":
+      return "PBE-SHA1-RC2-128";
     case "none":
       return "NONE";
     default:
@@ -289,6 +300,17 @@ export function createPkcs12(
       "-certpbe",
       opensslPbeName(options.certificateEncryption ?? "none"),
     ];
+    const usesRc2 = [options.certificateEncryption, options.keyEncryption].some(
+      (encryption) => encryption === "pbe-sha1-rc2-40" || encryption === "pbe-sha1-rc2-128"
+    );
+    // Only the synthetic-fixture subprocess needs OpenSSL 3's legacy provider.
+    // LibreSSL supports these PBE names directly and has no -legacy option.
+    if (
+      usesRc2 &&
+      execFileSync("openssl", ["version"], { encoding: "utf8" }).startsWith("OpenSSL 3.")
+    ) {
+      args.push("-legacy");
+    }
     if (options.includeMac === false) args.push("-nomac");
     else args.push("-macalg", options.macAlgorithm ?? "sha1");
     if (privateKey === null) args.push("-nokeys");
