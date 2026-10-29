@@ -98,8 +98,9 @@ export function decryptRc2Cbc(
       output.writeUInt16LE(r2, offset + 4);
       output.writeUInt16LE(r3, offset + 6);
       const previous = offset === 0 ? iv : encrypted.subarray(offset - 8, offset);
+      const previousBlock = new DataView(previous.buffer, previous.byteOffset, previous.byteLength);
       for (let index = 0; index < 8; index += 1) {
-        output[offset + index] = output.readUInt8(offset + index) ^ (previous[index] ?? 0);
+        output[offset + index] = output.readUInt8(offset + index) ^ previousBlock.getUint8(index);
       }
     }
     return output;

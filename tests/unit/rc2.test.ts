@@ -48,6 +48,35 @@ describe("legacy PKCS#12 RC2-CBC decryption", () => {
     expect(iv.toString("hex")).toBe("0102030405060708");
   });
 
+  it("honors byte offsets when ciphertext, key, and IV are bounded views", () => {
+    const key = Buffer.from("88bca90e90875a7f0f79c384627bafb2", "hex");
+    const block = Buffer.from("2269552ab0f85ca6", "hex");
+    const iv = Buffer.from("0102030405060708", "hex");
+    const ciphertext = Buffer.concat([block, block]);
+    const backing = Buffer.concat([
+      Buffer.alloc(3, 0xa5),
+      key,
+      ciphertext,
+      iv,
+      Buffer.alloc(3, 0x5a),
+    ]);
+    const original = Buffer.from(backing);
+    const keyStart = 3;
+    const ciphertextStart = keyStart + key.byteLength;
+    const ivStart = ciphertextStart + ciphertext.byteLength;
+
+    const decrypted = decryptRc2Cbc(
+      backing.subarray(ciphertextStart, ivStart),
+      backing.subarray(keyStart, ciphertextStart),
+      backing.subarray(ivStart, ivStart + iv.byteLength),
+      128
+    );
+
+    // The published vector decrypts to zero before CBC XOR, for each block.
+    expect(Buffer.from(decrypted)).toEqual(Buffer.concat([iv, block]));
+    expect(backing).toEqual(original);
+  });
+
   it.each([
     { encrypted: new Uint8Array() },
     { encrypted: new Uint8Array(7) },

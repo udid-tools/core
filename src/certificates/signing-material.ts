@@ -246,7 +246,11 @@ function decryptLegacyPbe(
   const iv = pkcs12Kdf(passphrase, parameters.salt, parameters.iterations, 2, 8, "sha1");
   if (rc2Bits !== null) {
     const decrypted = decryptRc2Cbc(encrypted, key, iv, rc2Bits);
-    const padding = decrypted[decrypted.byteLength - 1] ?? 0;
+    const padding = new DataView(
+      decrypted.buffer,
+      decrypted.byteOffset,
+      decrypted.byteLength
+    ).getUint8(decrypted.byteLength - 1);
     if (
       padding < 1 ||
       padding > 8 ||
