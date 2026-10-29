@@ -31,8 +31,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22.14.0
+          node-version: 24.19.0
           package-manager-cache: false
+
+      - name: Install repository npm version
+        run: npm install --global npm@11.19.0 --ignore-scripts --no-audit --no-fund
 
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
@@ -103,6 +106,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
           package-manager-cache: false
 
+      - name: Install repository npm version
+        run: npm install --global npm@11.19.0 --ignore-scripts --no-audit --no-fund
+
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
 
@@ -130,6 +136,9 @@ jobs:
         with:
           node-version: 22.14.0
           package-manager-cache: false
+
+      - name: Install repository npm version
+        run: npm install --global npm@11.19.0 --ignore-scripts --no-audit --no-fund
 
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
