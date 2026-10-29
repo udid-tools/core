@@ -7,6 +7,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [0.1.0-beta.13] - 2026-10-29
+
 ### Fixed
 
 - Restore PKCS#12 SHA-1/RC2-40 and SHA-1/RC2-128 input compatibility for certificate safe
@@ -167,7 +169,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.12...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.13...HEAD
+[0.1.0-beta.13]: https://github.com/udid-tools/core/compare/v0.1.0-beta.12...v0.1.0-beta.13
 [0.1.0-beta.12]: https://github.com/udid-tools/core/compare/v0.1.0-beta.11...v0.1.0-beta.12
 [0.1.0-beta.11]: https://github.com/udid-tools/core/compare/v0.1.0-beta.10...v0.1.0-beta.11
 [0.1.0-beta.10]: https://github.com/udid-tools/core/compare/v0.1.0-beta.9...v0.1.0-beta.10
