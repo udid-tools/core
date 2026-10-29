@@ -17,8 +17,10 @@ must use synthetic identities created solely for testing.
 
 ## Development setup
 
-The package requires Node.js 22.14.0 or newer and the npm version declared in
-`package.json`.
+Use the Node.js version in `.nvmrc` (24.19.0) and the npm version declared in
+`package.json` (11.19.0) for repository tooling and documentation. The published
+package continues to support Node.js 22.14.0 or newer; CI tests that minimum
+runtime separately.
 
 ```bash
 npm ci --ignore-scripts --no-audit --no-fund

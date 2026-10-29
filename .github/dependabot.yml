@@ -15,6 +15,12 @@ updates:
       - dependencies
       - javascript
     groups:
+      pki-major-upgrades:
+        patterns:
+          - asn1js
+          - pkijs
+        update-types:
+          - major
       production-minor-and-patch:
         dependency-type: production
         update-types:

@@ -284,7 +284,6 @@ function cryptoEngine(): ICryptoEngine {
   return new CryptoEngine({
     crypto: webcrypto,
     name: "node-webcrypto",
-    subtle: webcrypto.subtle,
   });
 }
 
