@@ -154,6 +154,36 @@ PFX, omitting certificates silently, or confusing `valid` with `trusted`.
 **Residual risk:** the caller chooses trust anchors, challenge policy, and
 whether a verification warning blocks its business flow.
 
+### Legacy PKCS#12 encryption compatibility
+
+**Threats:** legacy RC2 containers have weak password-encryption strength,
+malformed CBC blocks or padding can cause decoder faults, and enabling a global
+OpenSSL legacy provider can affect unrelated application crypto.
+
+**Mitigations:**
+
+- Accept only the existing PKCS#12 SHA-1/RC2-40 and SHA-1/RC2-128 PBE identifiers
+  for identity input; never expose RC2 as an output or caller-selected algorithm.
+- Verify the required container MAC before parsing encrypted safe contents or
+  decrypting key bags. Keep the fixed KDF iteration and outer DER/input bounds.
+- Require complete eight-byte ciphertext blocks and valid PKCS#7 padding.
+- Use an internal decryption-only RFC 2268 implementation with fixed-size key
+  expansion and constant work per block; clear its expanded key after use.
+- Keep RSA key/certificate matching, RSA key-size checks, SHA-256 profile
+  signing, and sanitized public errors unchanged.
+- Verify all published RFC 2268 vectors, independent OpenSSL-generated synthetic
+  containers, and authenticated malformed-container regressions.
+
+**Residual risk:** RC2-40 containers do not provide modern confidentiality against
+offline attacks; use PBES2/AES for new exports and protect existing secret
+material. JavaScript decryption and key expansion are not constant-time and do
+not protect against a hostile process sharing the runtime. No environment,
+filesystem, subprocess, network, or global-provider changes occur in the library.
+
+References: [RFC 2268](https://www.rfc-editor.org/rfc/rfc2268.html), sections 2,
+4, and 5; [RFC 7292](https://www.rfc-editor.org/rfc/rfc7292.html#appendix-C),
+Appendix C (accessed 2026-10-29).
+
 ### Profile and configuration injection
 
 **Threats:** dangerous URLs, duplicate fields, prototype-polluting keys, typed

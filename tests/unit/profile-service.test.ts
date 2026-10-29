@@ -168,6 +168,50 @@ describe("Profile Service generation", () => {
     expect(inspected.signature.valid).toBe(true);
   });
 
+  it.each(["pbe-sha1-rc2-40", "pbe-sha1-rc2-128"] as const)(
+    "signs and verifies a profile with a legacy %s PKCS#12 identity",
+    async (certificateEncryption) => {
+      const identity = createSyntheticIdentity();
+      const passphrase = "synthetic-legacy-passphrase";
+      const pkcs12 = createPkcs12(
+        identity.leafKeys.privateKey,
+        [identity.leafCertificate],
+        passphrase,
+        {
+          certificateEncryption,
+        }
+      );
+      const options = {
+        ...unsignedOptions(),
+        signing: { identity: { data: pkcs12, passphrase, type: "pkcs12" as const } },
+      };
+      const result = await generateProfile(options);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const inspected = await inspectAndVerifyCms(
+        result.value.data,
+        { mode: "signature" },
+        resolveLimits(undefined)
+      );
+      expect(result.value.protection.signed).toBe(true);
+      expect(inspected.signature.valid).toBe(true);
+      expect(decodePlist(inspected.content)).toMatchObject({ PayloadType: "Profile Service" });
+      const incorrect = {
+        ...options,
+        signing: {
+          identity: { ...options.signing.identity, passphrase: "wrong-synthetic-passphrase" },
+        },
+      };
+      await expect(generateProfile(incorrect)).resolves.toMatchObject({
+        ok: false,
+        error: { code: "INCORRECT_PASSPHRASE" },
+      });
+      await expect(generateProfileOrThrow(incorrect)).rejects.toMatchObject({
+        code: "INCORRECT_PASSPHRASE",
+      });
+    }
+  );
+
   it("fails closed for incomplete signing instead of silently returning XML", async () => {
     const invalid = {
       ...unsignedOptions(),
