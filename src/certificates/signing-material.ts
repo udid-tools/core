@@ -28,6 +28,7 @@ import type { ResourceLimits } from "../limits.js";
 import type { BinaryInput, CertificateInput, SigningOptions } from "../types.js";
 import { decodeBinaryInput } from "./binary-input.js";
 import { preflightDer } from "./der.js";
+import { decryptRc2Cbc } from "./rc2.js";
 
 const CERTIFICATE_PEM_LABELS = ["CERTIFICATE", "X509 CERTIFICATE"] as const;
 const PKCS12_PEM_LABELS = ["PKCS12", "PFX"] as const;
@@ -38,6 +39,8 @@ const CERTIFICATE_BAG_OID = "1.2.840.113549.1.12.10.1.3";
 const X509_CERTIFICATE_OID = "1.2.840.113549.1.9.22.1";
 const PKCS12_TRIPLE_DES_OID = "1.2.840.113549.1.12.1.3";
 const PKCS12_TWO_KEY_TRIPLE_DES_OID = "1.2.840.113549.1.12.1.4";
+const PKCS12_RC2_128_OID = "1.2.840.113549.1.12.1.5";
+const PKCS12_RC2_40_OID = "1.2.840.113549.1.12.1.6";
 const PBES2_OID = "1.2.840.113549.1.5.13";
 const PBKDF2_OID = "1.2.840.113549.1.5.12";
 const HMAC_SHA1_OID = "1.2.840.113549.2.7";
@@ -202,7 +205,11 @@ function parsePbeParameters(value: unknown): {
   const entries = value.valueBlock.value;
   const salt = entries[0];
   const iterations = entries[1];
-  if (!(salt instanceof asn1js.OctetString) || !(iterations instanceof asn1js.Integer)) {
+  if (
+    entries.length !== 2 ||
+    !(salt instanceof asn1js.OctetString) ||
+    !(iterations instanceof asn1js.Integer)
+  ) {
     throw new Error("Invalid PKCS#12 encryption parameters.");
   }
   const count = iterations.valueBlock.valueDec;
@@ -229,12 +236,30 @@ function decryptLegacyPbe(
 ): Uint8Array {
   const parameters = parsePbeParameters(algorithmParams);
   const twoKey = algorithm === PKCS12_TWO_KEY_TRIPLE_DES_OID;
-  if (!twoKey && algorithm !== PKCS12_TRIPLE_DES_OID) {
+  const rc2Bits =
+    algorithm === PKCS12_RC2_40_OID ? 40 : algorithm === PKCS12_RC2_128_OID ? 128 : null;
+  if (!twoKey && algorithm !== PKCS12_TRIPLE_DES_OID && rc2Bits === null) {
     throw new Error(`Unsupported PKCS#12 encryption algorithm: ${algorithm}`);
   }
-  const keyLength = twoKey ? 16 : 24;
+  const keyLength = rc2Bits === null ? (twoKey ? 16 : 24) : rc2Bits / 8;
   const key = pkcs12Kdf(passphrase, parameters.salt, parameters.iterations, 1, keyLength, "sha1");
   const iv = pkcs12Kdf(passphrase, parameters.salt, parameters.iterations, 2, 8, "sha1");
+  if (rc2Bits !== null) {
+    const decrypted = decryptRc2Cbc(encrypted, key, iv, rc2Bits);
+    const padding = new DataView(
+      decrypted.buffer,
+      decrypted.byteOffset,
+      decrypted.byteLength
+    ).getUint8(decrypted.byteLength - 1);
+    if (
+      padding < 1 ||
+      padding > 8 ||
+      decrypted.subarray(-padding).some((byte) => byte !== padding)
+    ) {
+      throw new Error("Invalid PKCS#12 encryption padding.");
+    }
+    return decrypted.subarray(0, decrypted.byteLength - padding);
+  }
   const decipher = createDecipheriv(
     twoKey ? "des-ede-cbc" : "des-ede3-cbc",
     Buffer.from(key),

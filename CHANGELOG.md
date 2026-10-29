@@ -7,6 +7,17 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- Restore PKCS#12 SHA-1/RC2-40 and SHA-1/RC2-128 input compatibility for certificate safe
+  contents and private-key bags, including the certificate encryption used by macOS LibreSSL
+  exports. Keep MAC verification, resource limits, sanitized failures, and RSA/SHA-256 signing.
+
+### Security
+
+- Update development-only transitive Zod and Undici packages to patched releases without
+  changing direct dependency pins or runtime dependencies.
+
 ## [0.1.0-beta.12] - 2026-10-22
 
 ### Changed
