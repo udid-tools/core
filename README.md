@@ -119,6 +119,8 @@ The default verification mode checks RSA/SHA-1 and RSA/SHA-256 signature integri
 | MDM, SCEP orchestration, profile encryption | Not included                                                                       |
 | Browser runtime                             | Not supported                                                                      |
 
+PKCS#12 input supports SHA-1/3DES, legacy SHA-1/RC2-40 and RC2-128, and PBES2/PBKDF2/AES-CBC password encryption. RC2 is accepted only to import existing identities; prefer PBES2/AES for new exports. Container MAC verification precedes decryption, and no global OpenSSL provider is enabled. See the [signing guide](https://udid-tools.github.io/core/guides/sign-profile/) for the full allow-list.
+
 ## Failure model
 
 Normal entry points return `Promise<Result<T>>`. They catch and sanitize expected and unexpected implementation failures so a malformed device payload does not reject the Promise or crash the host request handler.

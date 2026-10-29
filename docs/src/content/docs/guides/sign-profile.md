@@ -25,7 +25,11 @@ const result = await generateProfile({
 
 `Uint8Array`, strict base64, and PEM certificate inputs are supported. The PKCS#12 container must have exactly one unambiguous RSA private-key/certificate match, and the signing key must be at least 2048 bits. Certificates already present in the container and supplied chain are deduplicated by SHA-256 fingerprint.
 
-PKCS#12 certificate safe contents and private-key bags may be plaintext or password encrypted. The allow-list accepts PKCS#12 SHA-1/3DES PBE and PBES2 with PBKDF2 using HMAC-SHA-1, SHA-256, SHA-384, or SHA-512 plus AES-128-CBC, AES-192-CBC, or AES-256-CBC. Unknown algorithms and malformed parameters fail closed.
+PKCS#12 certificate safe contents and private-key bags may be plaintext or password encrypted. The allow-list accepts PKCS#12 SHA-1/3DES PBE, legacy SHA-1/RC2-40 or SHA-1/RC2-128 PBE, and PBES2 with PBKDF2 using HMAC-SHA-1, SHA-256, SHA-384, or SHA-512 plus AES-128-CBC, AES-192-CBC, or AES-256-CBC. Unknown algorithms and malformed parameters fail closed.
+
+RC2 decryption preserves compatibility with existing exports, including macOS LibreSSL's RC2-40 certificate safe contents. Prefer PBES2/AES when creating new containers: RC2-40 offers only 40 effective key bits. The library verifies the container MAC before decryption and keeps its own bounded, internal RC2 decoder; it never enables a global OpenSSL legacy provider. This input compatibility does not change RSA/SHA-256 profile signing or add profile encryption.
+
+The RC2 algorithm and compatibility OIDs follow [RFC 2268](https://www.rfc-editor.org/rfc/rfc2268.html) and [RFC 7292, Appendix C](https://www.rfc-editor.org/rfc/rfc7292.html#appendix-C) (accessed 2026-10-29).
 
 The beta output is attached CMS/PKCS#7 SignedData with content-type, message-digest, and signing-time authenticated attributes. The chain is embedded in the output; the package never downloads or invents it.
 
