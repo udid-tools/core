@@ -46,6 +46,7 @@ breaking-change labels visually distinct colors.
   - `Dependency review`
   - `CodeQL`
   - `CodeQL Actions`
+  - `Secret scanning`
   - `npm audit`
 - Block force pushes and branch deletion.
 - Require linear history and signed commits when that policy is practical for
@@ -159,3 +160,30 @@ available. The package is development-only and TypeDoc uses the default
 optimization level; the advisory describes amplification at optimization level 2. Keep the alert visible and reassess upstream updates rather than suppressing
 it. The official npm 11.19.0 distribution likewise bundles minimatch 10 and glob
 13; integrity verification does not remediate upstream package vulnerabilities.
+
+## Free supplementary scanning
+
+The JavaScript/TypeScript CodeQL job runs both `security-extended` and
+`security-and-quality`. The latter adds maintainability and reliability queries
+while retaining the extended security suite. The dedicated Actions analysis
+remains enabled separately. Public repositories use the existing free CodeQL
+scanning capability; no paid Code Quality product is required.
+
+The `Secret scanning` job runs the MIT-licensed Gitleaks CLI 8.30.1 directly,
+verified against a pinned official-release SHA-256 checksum. It scans all Git
+refs and the tracked working tree with upstream default rules, ignores inline
+bypass comments, and does not load repository allowlists. Every invocation uses
+100% redaction; scanner output is discarded and no finding reports or artifacts
+are uploaded. A failed scan produces only a generic failure message. Investigate
+locally with the same pinned CLI and full redaction.
+
+## Review of npm-installer CodeQL data flows
+
+The outbound-network and downloaded-file CodeQL recommendations identify
+intentional data flows in the npm installer. The configuration contains public
+package metadata, and its exact official HTTPS URL is validated before use.
+Downloads reject redirects and are bounded to 32 MiB and 60 seconds. SHA-512 is
+verified before the archive is written or installed; the temporary directory is
+private and the archive is mode 0600. Installation runs without a shell, with
+network fallback and lifecycle scripts disabled. These controls address the
+reported risks; no query exclusions or inline suppressions are used.

@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import process from "node:process";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath, URL } from "node:url";
 import {
   MAX_ARCHIVE_BYTES,
   downloadArchive,
@@ -162,6 +164,77 @@ await test("the default install flow verifies the download before invoking npm",
   } finally {
     globalThis.fetch = originalFetch;
     process.env.PATH = originalPath;
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+await test("the real CLI fails closed when its archive download fails", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "udid-tools-npm-cli-test-"));
+  try {
+    const preload = join(directory, "offline.mjs");
+    await writeFile(
+      preload,
+      'globalThis.fetch = () => Promise.reject(new Error("synthetic offline failure"));\n'
+    );
+    const result = spawnSync(
+      process.execPath,
+      ["--import", preload, fileURLToPath(new URL("./install-npm.mjs", import.meta.url))],
+      { encoding: "utf8" }
+    );
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /synthetic offline failure/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+await test("importing the installer without a CLI argument has no side effects", () => {
+  const installer = new URL("./install-npm.mjs", import.meta.url).href;
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "--eval",
+      `globalThis.fetch = () => { throw new Error("unexpected download"); }; await import(${JSON.stringify(installer)});`,
+    ],
+    { encoding: "utf8" }
+  );
+  assert.equal(result.status, 0, result.stderr);
+});
+
+await test("the real CLI completes with a verified synthetic archive and isolated npm", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "udid-tools-npm-cli-success-"));
+  try {
+    const preload = join(directory, "verified.mjs");
+    const metadataUrl = new URL("../npm-toolchain.json", import.meta.url).href;
+    await writeFile(
+      preload,
+      `
+      import fs from "node:fs/promises";
+      import { syncBuiltinESMExports } from "node:module";
+      const originalRead = fs.readFile;
+      fs.readFile = (path, ...args) => String(path) === ${JSON.stringify(metadataUrl)}
+        ? Promise.resolve(${JSON.stringify(JSON.stringify(configuration))})
+        : originalRead(path, ...args);
+      syncBuiltinESMExports();
+      globalThis.fetch = () => Promise.resolve(new Response(Buffer.from(${JSON.stringify(archive.toString("base64"))}, "base64")));
+    `
+    );
+    await writeFile(
+      join(directory, "npm"),
+      '#!/usr/bin/env node\nif (process.argv[2] === "--version") process.stdout.write("11.19.0\\n");\n',
+      { mode: 0o700 }
+    );
+    const result = spawnSync(
+      process.execPath,
+      ["--import", preload, fileURLToPath(new URL("./install-npm.mjs", import.meta.url))],
+      {
+        encoding: "utf8",
+        env: { ...process.env, PATH: `${directory}:${process.env.PATH}` },
+      }
+    );
+    assert.equal(result.status, 0, result.stderr);
+  } finally {
     await rm(directory, { recursive: true, force: true });
   }
 });
