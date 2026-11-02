@@ -195,9 +195,9 @@ await test("importing the installer without a CLI argument has no side effects",
     [
       "--input-type=module",
       "--eval",
-      `globalThis.fetch = () => { throw new Error("unexpected download"); }; await import(${JSON.stringify(installer)});`,
+      'globalThis.fetch = () => { throw new Error("unexpected download"); }; await import(process.env.UDID_NPM_INSTALLER_TEST_MODULE);',
     ],
-    { encoding: "utf8" }
+    { encoding: "utf8", env: { ...process.env, UDID_NPM_INSTALLER_TEST_MODULE: installer } }
   );
   assert.equal(result.status, 0, result.stderr);
 });
@@ -213,11 +213,11 @@ await test("the real CLI completes with a verified synthetic archive and isolate
       import fs from "node:fs/promises";
       import { syncBuiltinESMExports } from "node:module";
       const originalRead = fs.readFile;
-      fs.readFile = (path, ...args) => String(path) === ${JSON.stringify(metadataUrl)}
-        ? Promise.resolve(${JSON.stringify(JSON.stringify(configuration))})
+      fs.readFile = (path, ...args) => String(path) === process.env.UDID_NPM_TEST_METADATA_URL
+        ? Promise.resolve(process.env.UDID_NPM_TEST_PIN)
         : originalRead(path, ...args);
       syncBuiltinESMExports();
-      globalThis.fetch = () => Promise.resolve(new Response(Buffer.from(${JSON.stringify(archive.toString("base64"))}, "base64")));
+      globalThis.fetch = () => Promise.resolve(new Response(Buffer.from(process.env.UDID_NPM_TEST_ARCHIVE, "base64")));
     `
     );
     await writeFile(
@@ -230,7 +230,13 @@ await test("the real CLI completes with a verified synthetic archive and isolate
       ["--import", preload, fileURLToPath(new URL("./install-npm.mjs", import.meta.url))],
       {
         encoding: "utf8",
-        env: { ...process.env, PATH: `${directory}:${process.env.PATH}` },
+        env: {
+          ...process.env,
+          PATH: `${directory}:${process.env.PATH}`,
+          UDID_NPM_TEST_METADATA_URL: metadataUrl,
+          UDID_NPM_TEST_PIN: JSON.stringify(configuration),
+          UDID_NPM_TEST_ARCHIVE: archive.toString("base64"),
+        },
       }
     );
     assert.equal(result.status, 0, result.stderr);
