@@ -39,7 +39,7 @@ jobs:
           package-manager-cache: false
 
       - name: Install repository npm version
-        run: npm install --global npm@11.19.0 --ignore-scripts --no-audit --no-fund
+        run: node .github/scripts/install-npm.mjs
 
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund

@@ -20,7 +20,7 @@ export default defineConfig(
   {
     languageOptions: {
       parserOptions: {
-        projectService: { allowDefaultProject: ["scripts/*.mjs"] },
+        projectService: { allowDefaultProject: ["scripts/*.mjs", ".github/scripts/*.mjs"] },
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -61,7 +61,7 @@ export default defineConfig(
     },
   },
   {
-    files: ["scripts/*.mjs"],
+    files: ["scripts/*.mjs", ".github/scripts/*.mjs"],
     rules: {
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/no-unsafe-argument": "off",

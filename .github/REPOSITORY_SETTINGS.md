@@ -45,6 +45,7 @@ breaking-change labels visually distinct colors.
   - `Packed package consumer`
   - `Dependency review`
   - `CodeQL`
+  - `CodeQL Actions`
   - `npm audit`
 - Block force pushes and branch deletion.
 - Require linear history and signed commits when that policy is practical for
@@ -134,3 +135,27 @@ ruleset bypasses, environments, trusted publishers, package maintainers,
 installed Apps, workflow permissions, Actions pins, dependency alerts, secret
 scanning findings, and recovery material. Record remediation in a private
 security tracking system when disclosure would increase risk.
+
+## npm bootstrap integrity and upstream compatibility
+
+Workflow jobs use `.github/scripts/install-npm.mjs` to download the exact official
+npm archive named in `.github/npm-toolchain.json`. The installer bounds the
+HTTPS download, rejects redirects, and verifies its pinned SHA-512 digest before
+installing that local archive with lifecycle scripts disabled. It checks the
+resulting version against the root `packageManager` field and removes the
+temporary archive even after failure. Keep the metadata and package manager
+version aligned and reverify official registry integrity when updating npm.
+
+The scoped minimatch overrides cover ESLint, its config array, and the
+TypeScript parser. They use the retained `Minimatch.match` and `minimatch` APIs;
+full lint, type, test, and documentation verification must pass after updates.
+Remove each override when its parent officially accepts a patched release.
+
+TypeDoc 0.28.20 uses `Minimatch.matchOne`, `globParts`, and the old `set`
+representation. These APIs were removed or changed in minimatch 11, so forcing
+that major version into TypeDoc is incompatible. Its minimatch 10 dependency
+remains subject to GHSA-g3hv-75wg-m249 until an official compatible update is
+available. The package is development-only and TypeDoc uses the default
+optimization level; the advisory describes amplification at optimization level 2. Keep the alert visible and reassess upstream updates rather than suppressing
+it. The official npm 11.19.0 distribution likewise bundles minimatch 10 and glob
+13; integrity verification does not remediate upstream package vulnerabilities.

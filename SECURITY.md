@@ -39,8 +39,9 @@ authentication token, or unredacted real-device response. Maintainers will ask
 for a synthetic reproduction if additional material is needed.
 
 We aim to acknowledge a complete report within three business days and provide
-an initial triage within seven business days. Complex investigations may take
-longer. These targets are best-effort, not guarantees.
+an initial triage within seven business days. These are best-effort targets, not
+guarantees. For publicly known medium-severity or higher vulnerabilities with an
+available fix, we aim to remediate within 60 days.
 
 ## Coordinated disclosure
 
