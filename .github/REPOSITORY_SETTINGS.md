@@ -45,6 +45,8 @@ breaking-change labels visually distinct colors.
   - `Packed package consumer`
   - `Dependency review`
   - `CodeQL`
+  - `CodeQL Actions`
+  - `Secret scanning`
   - `npm audit`
 - Block force pushes and branch deletion.
 - Require linear history and signed commits when that policy is practical for
@@ -134,3 +136,54 @@ ruleset bypasses, environments, trusted publishers, package maintainers,
 installed Apps, workflow permissions, Actions pins, dependency alerts, secret
 scanning findings, and recovery material. Record remediation in a private
 security tracking system when disclosure would increase risk.
+
+## npm bootstrap integrity and upstream compatibility
+
+Workflow jobs use `.github/scripts/install-npm.mjs` to download the exact official
+npm archive named in `.github/npm-toolchain.json`. The installer bounds the
+HTTPS download, rejects redirects, and verifies its pinned SHA-512 digest before
+installing that local archive with lifecycle scripts disabled. It checks the
+resulting version against the root `packageManager` field and removes the
+temporary archive even after failure. Keep the metadata and package manager
+version aligned and reverify official registry integrity when updating npm.
+
+The scoped minimatch overrides cover ESLint, its config array, and the
+TypeScript parser. They use the retained `Minimatch.match` and `minimatch` APIs;
+full lint, type, test, and documentation verification must pass after updates.
+Remove each override when its parent officially accepts a patched release.
+
+TypeDoc 0.28.20 uses `Minimatch.matchOne`, `globParts`, and the old `set`
+representation. These APIs were removed or changed in minimatch 11, so forcing
+that major version into TypeDoc is incompatible. Its minimatch 10 dependency
+remains subject to GHSA-g3hv-75wg-m249 until an official compatible update is
+available. The package is development-only and TypeDoc uses the default
+optimization level; the advisory describes amplification at optimization level 2. Keep the alert visible and reassess upstream updates rather than suppressing
+it. The official npm 11.19.0 distribution likewise bundles minimatch 10 and glob
+13; integrity verification does not remediate upstream package vulnerabilities.
+
+## Free supplementary scanning
+
+The JavaScript/TypeScript CodeQL job runs both `security-extended` and
+`security-and-quality`. The latter adds maintainability and reliability queries
+while retaining the extended security suite. The dedicated Actions analysis
+remains enabled separately. Public repositories use the existing free CodeQL
+scanning capability; no paid Code Quality product is required.
+
+The `Secret scanning` job runs the MIT-licensed Gitleaks CLI 8.30.1 directly,
+verified against a pinned official-release SHA-256 checksum. It scans all Git
+refs and the tracked working tree with upstream default rules, ignores inline
+bypass comments, and does not load repository allowlists. Every invocation uses
+100% redaction; scanner output is discarded and no finding reports or artifacts
+are uploaded. A failed scan produces only a generic failure message. Investigate
+locally with the same pinned CLI and full redaction.
+
+## Review of npm-installer CodeQL data flows
+
+The outbound-network and downloaded-file CodeQL recommendations identify
+intentional data flows in the npm installer. The configuration contains public
+package metadata, and its exact official HTTPS URL is validated before use.
+Downloads reject redirects and are bounded to 32 MiB and 60 seconds. SHA-512 is
+verified before the archive is written or installed; the temporary directory is
+private and the archive is mode 0600. Installation runs without a shell, with
+network fallback and lifecycle scripts disabled. These controls address the
+reported risks; no query exclusions or inline suppressions are used.

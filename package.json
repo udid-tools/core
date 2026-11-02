@@ -71,7 +71,8 @@
     "docs:api": "typedoc",
     "docs:api:check": "npm run docs:api && git diff --exit-code -- docs/src/content/docs/reference/api",
     "pack:check": "npm pack --dry-run",
-    "verify": "npm run docs:api:check && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run docs:check && npm run docs:build && npm run pack:check"
+    "verify": "npm run docs:api:check && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run test:npm-toolchain && npm run build && npm run docs:check && npm run docs:build && npm run pack:check",
+    "test:npm-toolchain": "node --input-type=module --eval 'import { mkdirSync } from \"node:fs\"; mkdirSync(\"coverage\", { recursive: true });' && node --experimental-test-coverage --test-coverage-include=.github/scripts/install-npm.mjs --test-coverage-lines=90 --test-coverage-branches=90 --test-coverage-functions=90 --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=coverage/npm-toolchain.lcov --test .github/scripts/install-npm.node-test.mjs"
   },
   "dependencies": {
     "asn1js": "4.0.0",
@@ -104,6 +105,15 @@
     "markdown-it": "14.3.3",
     "postcss-nested@6.2.0": {
       "postcss-selector-parser": "7.1.6"
+    },
+    "@eslint/config-array": {
+      "minimatch": "11.0.4"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.4"
+    },
+    "eslint": {
+      "minimatch": "11.0.4"
     }
   }
 }
