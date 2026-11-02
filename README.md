@@ -8,6 +8,7 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/udid-tools/core/badge)](https://scorecard.dev/viewer/?uri=github.com/udid-tools/core)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14211/badge)](https://www.bestpractices.dev/projects/14211)
 [![License: MIT](https://img.shields.io/github/license/udid-tools/core)](./LICENSE)
+[![Accessibility: policy](https://img.shields.io/badge/Accessibility-policy-blue)](https://github.com/udid-tools/core/blob/main/ACCESSIBILITY.md)
 
 Security-first TypeScript primitives for Apple Profile Service profiles: generate XML, optionally produce attached CMS/PKCS#7 SignedData, verify device responses, and parse every returned plist field without losing unknown data.
 
@@ -184,6 +185,12 @@ The repository includes CI, CodeQL, dependency review, Scorecard, secret scannin
 The Profile Service format is documented in Apple’s archived [Over-the-Air Profile Delivery and Configuration](https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/profile-service/profile-service.html) guide and its [configuration profile examples](https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/ConfigurationProfileExamples/ConfigurationProfileExamples.html). General profile keys are cross-checked against Apple’s current [configuration profile documentation](https://developer.apple.com/documentation/devicemanagement/configuring-multiple-devices-using-profiles).
 
 Apple’s documentation and platform behavior remain authoritative. This project is independent and is not affiliated with or endorsed by Apple Inc.
+
+## Accessibility
+
+Read our [accessibility policy](https://github.com/udid-tools/core/blob/main/ACCESSIBILITY.md) for the scope, known limitations,
+ways to report a barrier, and contributor checks. The policy badge is a link to
+that information, not a conformance certification.
 
 ## License
 
