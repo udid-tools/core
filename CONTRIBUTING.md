@@ -3,6 +3,10 @@
 Thank you for helping improve `@udid-tools/core`. The project welcomes bug
 fixes, documentation improvements, tests, and carefully scoped features.
 
+Read the [accessibility policy](./ACCESSIBILITY.md) before changing documentation,
+examples, or user-facing behavior. Report barriers through its feedback channels
+and include the relevant accessibility checks and remaining limitations in your PR.
+
 ## Before you begin
 
 - Read the [Code of Conduct](CODE_OF_CONDUCT.md).
