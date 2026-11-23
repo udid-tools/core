@@ -12,8 +12,6 @@
 
 Security-first TypeScript primitives for Apple Profile Service profiles: generate XML, optionally produce attached CMS/PKCS#7 SignedData, verify device responses, and parse every returned plist field without losing unknown data.
 
-> Version `1.0.0` follows semantic versioning. Incompatible public API changes require a major release. MDM is intentionally out of scope.
-
 ## Install
 
 ```bash
