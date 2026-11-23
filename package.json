@@ -75,9 +75,9 @@
     "test:npm-toolchain": "node --input-type=module --eval 'import { mkdirSync } from \"node:fs\"; mkdirSync(\"coverage\", { recursive: true });' && node --experimental-test-coverage --test-coverage-include=.github/scripts/install-npm.mjs --test-coverage-lines=90 --test-coverage-branches=90 --test-coverage-functions=90 --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=coverage/npm-toolchain.lcov --test .github/scripts/install-npm.node-test.mjs"
   },
   "dependencies": {
-    "asn1js": "4.0.0",
-    "fast-xml-parser": "5.12.0",
-    "fast-xml-validator": "1.4.2",
+    "asn1js": "4.1.0",
+    "fast-xml-parser": "5.12.1",
+    "fast-xml-validator": "1.4.4",
     "pkijs": "4.0.1"
   },
   "devDependencies": {
