@@ -7,6 +7,14 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-23
+
+### Changed
+
+- Publish the first stable Profile Service API with semantic-versioning guarantees.
+- Update documentation, installation examples and supported-scope descriptions for 1.0.0.
+- Refresh runtime and development dependencies and pinned security tooling.
+
 ### Security
 
 - Remove vulnerable minimatch from the TypeDoc dependency tree using the compatible 6.2.3
@@ -177,7 +185,8 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 [keep a changelog]: https://keepachangelog.com/en/1.1.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[unreleased]: https://github.com/udid-tools/core/compare/v0.1.0-beta.13...HEAD
+[unreleased]: https://github.com/udid-tools/core/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/udid-tools/core/compare/v0.1.0-beta.13...v1.0.0
 [0.1.0-beta.13]: https://github.com/udid-tools/core/compare/v0.1.0-beta.12...v0.1.0-beta.13
 [0.1.0-beta.12]: https://github.com/udid-tools/core/compare/v0.1.0-beta.11...v0.1.0-beta.12
 [0.1.0-beta.11]: https://github.com/udid-tools/core/compare/v0.1.0-beta.10...v0.1.0-beta.11
