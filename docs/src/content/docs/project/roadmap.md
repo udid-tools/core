@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-description: Additive directions after the first beta.
+description: Additive directions after version 1.0.0.
 ---
 
 The roadmap is demand- and evidence-driven:
@@ -11,7 +11,7 @@ The roadmap is demand- and evidence-driven:
 - expand certificate policy and inspection metadata without changing secure defaults;
 - normalize newly documented Apple response fields while preserving `raw`;
 - strengthen consumer compatibility and platform matrices;
-- graduate from beta after API/security feedback and audited real-world use.
+- continue API/security review and interoperability validation after the stable release.
 
 Profile encryption, SCEP orchestration, and complete OTA enrollment state machines are not promised for core. MDM remains a possible separate package and will not be folded into this API merely because it also uses configuration profiles.
 

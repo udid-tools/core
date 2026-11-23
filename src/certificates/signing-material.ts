@@ -427,7 +427,7 @@ function parsePkcs12(signing: SigningOptions, limits: ResourceLimits): ParsedPkc
   if (identity.type !== "pkcs12") {
     throw new UdidToolsError(
       "UNSUPPORTED_ALGORITHM",
-      "Only PKCS#12 signing identities are supported in this beta release."
+      "Only PKCS#12 signing identities are supported in this release."
     );
   }
   if (identity.passphrase !== undefined && typeof identity.passphrase !== "string") {
@@ -578,7 +578,7 @@ export function loadSigningMaterial(
   if (digestAlgorithm !== undefined && digestAlgorithm !== "sha256") {
     throw new UdidToolsError(
       "UNSUPPORTED_ALGORITHM",
-      "Only RSA with SHA-256 is supported in this beta release."
+      "Only RSA with SHA-256 is supported in this release."
     );
   }
   const chainCandidate: unknown = signing.certificateChain;

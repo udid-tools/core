@@ -18,6 +18,6 @@ description: Exact implemented and deferred surface.
 | Chains                | Caller-supplied embedded chain                                                                | Automatic Apple/OS chain discovery/download                |
 | Verification          | none, integrity, explicit offline trust chain                                                 | OS trust store, AIA fetching, CRL/OCSP network checks      |
 | Side effects          | none                                                                                          | Filesystem, env, network, logging, telemetry, global state |
-| Distribution          | npm and GitHub Packages design; beta dist-tag                                                 | Publication before owner review                            |
+| Distribution          | npm and GitHub Packages; latest dist-tag                                                      | Publication before owner review                            |
 
 New caller-configurable crypto capabilities enter as additive discriminated variants after an algorithm request, security review, test vectors, interoperability coverage, documentation, and an ADR.

@@ -4,7 +4,7 @@ This file is the durable engineering context for humans and coding agents workin
 
 ## Product intent
 
-Build a small, framework-agnostic, server-side TypeScript core for Apple Profile Service profile generation, optional signing, CMS response verification, and lossless response parsing. The current release target is `0.1.0-beta.13` under the npm scope `@udid-tools`.
+Build a small, framework-agnostic, server-side TypeScript core for Apple Profile Service profile generation, optional signing, CMS response verification, and lossless response parsing. The current release target is `1.0.0` under the npm scope `@udid-tools`.
 
 MDM is a separate product boundary. Do not add MDM enrollment, APNs, check-in, commands, declarative management, SCEP orchestration, profile delivery state machines, HTTP servers, persistence, or UI code here. A future MDM package may reuse stable low-level primitives without changing this package’s Profile Service contract.
 
@@ -21,7 +21,7 @@ MDM is a separate product boundary. Do not add MDM enrollment, APNs, check-in, c
 9. Unknown Apple fields must remain available losslessly. Additive Apple changes should not require a major release.
 10. Every parser and encoder must enforce bounded resource usage before expensive work.
 
-## Beta cryptographic scope
+## Supported cryptographic scope
 
 - Input identity: PKCS#12/PFX.
 - Signing key: RSA.
@@ -30,7 +30,7 @@ MDM is a separate product boundary. Do not add MDM enrollment, APNs, check-in, c
 - Output: DER-encoded attached CMS/PKCS#7 SignedData.
 - Chain: optional and caller-provided.
 - Response verification: `none`, `signature`, or `trust-chain` with caller-provided roots/intermediates.
-- No revocation network lookups, certificate downloads, OS trust store, profile encryption, detached content, or alternative profile-signing algorithms in this beta.
+- No revocation network lookups, certificate downloads, OS trust store, profile encryption, detached content, or alternative profile-signing algorithms in this release.
 
 New caller-configurable algorithms require an approved issue using the algorithm-request template, threat analysis, test vectors, interoperability tests, documentation, and an ADR. A reproducible compatibility defect within the existing Apple Profile Service scope follows the bug-report process and still requires synthetic regression fixtures, interoperability evidence, and security review. Prefer adding a new discriminated identity/provider variant over changing existing fields.
 
@@ -64,7 +64,7 @@ Dependencies point inward toward shared types/errors/limits. Profile orchestrati
 
 ## API evolution
 
-- Follow semantic versioning, including during beta.
+- Follow semantic versioning, for all releases.
 - Prefer additive optional fields and discriminated unions.
 - Do not repurpose an existing field, error code, or warning code.
 - Keep defaults secure and stable. New permissive behavior must be opt-in.

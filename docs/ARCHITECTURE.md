@@ -48,7 +48,7 @@ Decodes strict binary inputs, loads PKCS#12, identifies the signer by matching i
 
 ### CMS
 
-Produces DER attached SignedData with authenticated content-type, message-digest, and signing-time attributes. Response inspection requires attached content and embedded signer certificates, allow-lists RSA/SHA-256 in the beta, verifies all signers, and performs offline path validation only when explicit roots are provided.
+Produces DER attached SignedData with authenticated content-type, message-digest, and signing-time attributes. Response inspection requires attached content and embedded signer certificates, allow-lists RSA/SHA-1 and RSA/SHA-256 response signatures, verifies all signers, and performs offline path validation only when explicit roots are provided.
 
 ### Cross-cutting safety
 

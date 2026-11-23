@@ -1,15 +1,15 @@
 ---
 title: Installation
-description: Install the UDID Tools Core beta from npm.
+description: Install UDID Tools Core from npm.
 ---
 
-Install the public beta from npm:
+Install the stable package from npm:
 
 ```bash
-npm install @udid-tools/core@beta
+npm install @udid-tools/core@1.0.0
 ```
 
-The beta requires Node.js 22.14 or newer and is designed for trusted server-side environments. Do not bundle signing identities into browser code.
+The package requires Node.js 22.14 or newer and is designed for trusted server-side environments. Do not bundle signing identities into browser code.
 
 ## Runtime contract
 
