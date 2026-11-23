@@ -114,6 +114,12 @@
     },
     "eslint": {
       "minimatch": "11.0.4"
+    },
+    "typedoc": {
+      "minimatch": {
+        ".": "6.2.3",
+        "brace-expansion": "2.1.8"
+      }
     }
   }
 }
