@@ -325,7 +325,7 @@ Controls response acceptance, correlation, normalization, and resource limits.
 
 ### Pkcs12SigningIdentity
 
-PKCS#12/PFX signing identity supported by the beta cryptographic profile.
+PKCS#12/PFX signing identity supported by the supported cryptographic profile.
 
 #### Properties
 

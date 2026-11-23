@@ -73,7 +73,7 @@ export interface ProfileServiceDefinition {
   readonly uuid?: string;
 }
 
-/** PKCS#12/PFX signing identity supported by the beta cryptographic profile. */
+/** PKCS#12/PFX signing identity supported by the supported cryptographic profile. */
 export interface Pkcs12SigningIdentity {
   readonly data: BinaryInput;
   readonly passphrase?: string;

@@ -16,7 +16,7 @@ Branch on `error.code`, not the human-readable message.
 | `INCORRECT_PASSPHRASE`                                         | PKCS#12 passphrase did not verify                                |
 | `INVALID_PKCS12`, `INVALID_PRIVATE_KEY`, `INVALID_CERTIFICATE` | Crypto material is malformed/invalid                             |
 | `CERTIFICATE_KEY_MISMATCH`                                     | No unambiguous RSA key/certificate match exists                  |
-| `UNSUPPORTED_ALGORITHM`                                        | Input is outside the beta allow-list                             |
+| `UNSUPPORTED_ALGORITHM`                                        | Input is outside the supported allow-list                        |
 | `PROFILE_SIGNING_FAILED`                                       | CMS output could not be produced                                 |
 | `MALFORMED_CMS`, `MALFORMED_PLIST`                             | External response syntax/structure is invalid                    |
 | `INVALID_SIGNATURE`                                            | CMS integrity verification failed                                |

@@ -34,7 +34,7 @@ export function signCms(
   if (requestedDigest !== "sha256") {
     throw new UdidToolsError(
       "UNSUPPORTED_ALGORITHM",
-      "Only RSA with SHA-256 is supported in this beta release."
+      "Only RSA with SHA-256 is supported in this release."
     );
   }
 

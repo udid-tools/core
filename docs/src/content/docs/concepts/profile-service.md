@@ -5,7 +5,7 @@ description: Understand the narrow Apple Profile Service flow implemented by the
 
 Apple Profile Service is a special configuration profile whose literal `PayloadType` is `Profile Service`. It asks a device to POST selected identifiers to a URL. The request profile may include an opaque `Challenge`; the device returns that value with the requested attributes and signs the plist response as CMS/PKCS#7 SignedData.
 
-The beta implements that focused exchange:
+The package implements that focused exchange:
 
 1. Your application authenticates a user and creates a one-time challenge.
 2. `generateProfile` creates the Profile Service plist and optionally signs it.

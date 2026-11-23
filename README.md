@@ -1,6 +1,6 @@
 # `@udid-tools/core`
 
-[![npm beta version](https://img.shields.io/npm/v/%40udid-tools%2Fcore/beta?label=npm%20beta)](https://www.npmjs.com/package/@udid-tools/core)
+[![npm version](https://img.shields.io/npm/v/%40udid-tools%2Fcore/latest?label=npm)](https://www.npmjs.com/package/@udid-tools/core)
 [![CI](https://github.com/udid-tools/core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/udid-tools/core/actions/workflows/ci.yml)
 [![Security](https://github.com/udid-tools/core/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/udid-tools/core/actions/workflows/security.yml)
 [![Coverage](https://codecov.io/gh/udid-tools/core/branch/main/graph/badge.svg)](https://codecov.io/gh/udid-tools/core)
@@ -12,12 +12,12 @@
 
 Security-first TypeScript primitives for Apple Profile Service profiles: generate XML, optionally produce attached CMS/PKCS#7 SignedData, verify device responses, and parse every returned plist field without losing unknown data.
 
-> **Beta:** `0.1.0-beta.13` is ready for evaluation. Its public API follows semantic versioning, but beta releases may still contain breaking changes. MDM is intentionally out of scope.
+> Version `1.0.0` follows semantic versioning. Incompatible public API changes require a major release. MDM is intentionally out of scope.
 
 ## Install
 
 ```bash
-npm install @udid-tools/core@beta
+npm install @udid-tools/core@1.0.0
 ```
 
 The package is ESM-only, requires Node.js 22.14 or newer, and is intended for trusted server-side runtimes. It can also be installed from GitHub Packages under the same `@udid-tools/core` name after configuring the `@udid-tools` registry.
@@ -102,7 +102,7 @@ The default verification mode checks RSA/SHA-1 and RSA/SHA-256 signature integri
 
 ## Capability matrix
 
-| Capability                                  | `0.1.0-beta.13`                                                                    |
+| Capability                                  | `1.0.0`                                                                            |
 | ------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Apple Profile Service payload               | Supported                                                                          |
 | Documented attributes                       | `UDID`, `VERSION`, `PRODUCT`, `SERIAL`, `MEID`, `IMEI`, `ICCID`, `MAC_ADDRESS_EN0` |

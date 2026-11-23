@@ -15,7 +15,7 @@ parseProfileServiceResponseOrThrow(input, options?): Promise<ProfileServiceRespo
 customDeviceAttribute(value): CustomDeviceAttribute
 ```
 
-The package exports all configuration, result, error, warning, limit, plist, certificate, and response types from `@udid-tools/core`. Internal plist/CMS helpers are intentionally not public in the beta.
+The package exports all configuration, result, error, warning, limit, plist, certificate, and response types from `@udid-tools/core`. Internal plist/CMS helpers are intentionally not public.
 
 ## Binary input
 

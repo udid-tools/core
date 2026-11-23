@@ -31,7 +31,7 @@ RC2 decryption preserves compatibility with existing exports, including macOS Li
 
 The RC2 algorithm and compatibility OIDs follow [RFC 2268](https://www.rfc-editor.org/rfc/rfc2268.html) and [RFC 7292, Appendix C](https://www.rfc-editor.org/rfc/rfc7292.html#appendix-C) (accessed 2026-10-29).
 
-The beta output is attached CMS/PKCS#7 SignedData with content-type, message-digest, and signing-time authenticated attributes. The chain is embedded in the output; the package never downloads or invents it.
+The output is attached CMS/PKCS#7 SignedData with content-type, message-digest, and signing-time authenticated attributes. The chain is embedded in the output; the package never downloads or invents it.
 
 ## Fail-closed behavior
 
