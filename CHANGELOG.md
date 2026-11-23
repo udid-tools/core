@@ -7,6 +7,14 @@ Versioning]. Prereleases use npm's `beta` distribution tag.
 
 ## [Unreleased]
 
+### Security
+
+- Remove vulnerable minimatch from the TypeDoc dependency tree using the compatible 6.2.3
+  release and brace-expansion 2.1.8. TypeDoc still requires the `matchOne` API removed in
+  minimatch 11; this scoped override avoids GHSA-g3hv-75wg-m249 without breaking API generation.
+- Refresh the consumer smoke-test lockfile from the current package artifact, including
+  fast-xml-parser 5.12.1 to resolve GHSA-474x-hrwr-fgx4.
+
 ## [0.1.0-beta.13] - 2026-10-29
 
 ### Fixed
