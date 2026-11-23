@@ -458,10 +458,11 @@ describe("CMS signing and verification", () => {
       expect.objectContaining({ code: "UNSUPPORTED_ALGORITHM" })
     );
 
+    const invalidPrivateKey: unknown = {};
     expect(() =>
       signCms(content, {
         ...material,
-        privateKey: {} as SigningMaterial["privateKey"],
+        privateKey: invalidPrivateKey as SigningMaterial["privateKey"],
       })
     ).toThrow(expect.objectContaining({ code: "PROFILE_SIGNING_FAILED" }));
   });
